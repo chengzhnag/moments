@@ -1,46 +1,42 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import cdn from 'vite-plugin-cdn-import'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    cdn({
+      modules: [
+        {
+          name: 'react',
+          var: 'React',
+          path: 'https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js',
+        },
+        {
+          name: 'react-dom',
+          var: 'ReactDOM',
+          path: 'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js',
+        }
+      ],
+    }),
+  ],
   build: {
     rollupOptions: {
+      external: ['react', 'react-dom',  ], // 将 React 和 Antd 外部化
+      input: {
+        main: path.resolve(__dirname, './index.html'),
+      },
       output: {
-        // 手动分块策略
-        manualChunks: {
-          // React相关库
-          'react-vendor': ['react', 'react-dom'],
-          // 路由库
-          'router-vendor': ['react-router-dom'],
-          // UI组件库
-          'ui-vendor': ['antd-mobile', 'antd-mobile-icons'],
-          // 工具库
-          'utils-vendor': ['ahooks'],
+        globals: {
+          react: 'React', // 全局变量名
+          'react-dom': 'ReactDOM', // 全局变量名
         },
-        // 文件名格式
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
-      }
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]',
+      },
     },
-    // 设置块大小警告限制
-    chunkSizeWarningLimit: 1000,
-    // 启用源码映射（可选，生产环境可以关闭）
-    sourcemap: false,
-    // 压缩选项
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // 移除console
-        drop_debugger: true, // 移除debugger
-      }
-    }
   },
-  // CSS代码分割
-  cssCodeSplit: true,
-  // 预构建选项
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom']
-  }
 })
