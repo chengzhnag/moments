@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuthStorage, useAutoLogin, useLogin, useLogout } from './authUtils';
 import { authApi } from './api';
 
 const AuthContext = createContext();
@@ -12,19 +13,47 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // 使用认证存储Hook
+  const { 
+    user, 
+    credentials, 
+    clearAuthCache, 
+    isAuthExpired 
+  } = useAuthStorage();
+
+  // 使用自动登录Hook
+  const { 
+    autoLoginLoading, 
+    runAutoLogin, 
+    canAutoLogin 
+  } = useAutoLogin();
+
+  // 使用登录Hook
+  const { 
+    loginLoading, 
+    runLogin, 
+    loginError 
+  } = useLogin();
+
+  // 使用登出Hook
+  const { logout } = useLogout();
 
   // 检查初始认证状态
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        const currentUser = authApi.getCurrentUser();
-        if (authApi.isAuthenticated() && currentUser) {
-          setUser(currentUser);
+        // 如果有缓存的认证信息且未过期，尝试自动登录
+        if (canAutoLogin) {
+          await runAutoLogin();
+        } else if (credentials && isAuthExpired()) {
+          // 认证已过期，清除缓存
+          clearAuthCache();
         }
       } catch (error) {
         console.error('Auth check failed:', error);
+        clearAuthCache();
       } finally {
         setLoading(false);
       }
@@ -33,27 +62,29 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  // 登录方法
   const login = async (account, password) => {
     try {
-      const result = await authApi.login(account, password);
-      setUser(result.user);
+      const result = await runLogin(account, password);
       return result;
     } catch (error) {
       throw error;
     }
   };
 
-  const logout = () => {
-    authApi.logout();
-    setUser(null);
+  // 登出方法
+  const handleLogout = () => {
+    logout();
   };
 
   const value = {
     user,
-    loading,
+    loading: loading || autoLoginLoading || loginLoading,
     login,
-    logout,
+    logout: handleLogout,
     isAuthenticated: !!user,
+    loginError,
+    canAutoLogin
   };
 
   return (

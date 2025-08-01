@@ -7,155 +7,129 @@ import {
   Card
 } from "antd-mobile";
 import { EyeInvisibleOutline, EyeOutline, UserOutline, LockOutline } from "antd-mobile-icons";
-import { useRequest } from "ahooks";
 import { useAuth } from "../utils/authContext";
 import { useNavigate } from "react-router-dom";
+import styles from "./login.module.css";
 
 const Login = () => {
   const [visible, setVisible] = useState(false);
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const { login: authLogin } = useAuth();
-
-  // 使用 ahooks 的 useRequest 处理登录请求
-  const { loading, run: login } = useRequest(
-    async (values) => {
-      const result = await authLogin(values.account, values.password);
-      return result;
-    },
-    {
-      manual: true,
-      onSuccess: (data) => {
-        Toast.show({
-          icon: 'success',
-          content: '登录成功！',
-        });
-        // 登录成功后跳转到主页
-        navigate('/');
-      },
-      onError: (error) => {
-        Toast.show({
-          icon: 'fail',
-          content: error.message || '登录失败，请重试',
-        });
-      },
-    }
-  );
+  const { login, loading, loginError } = useAuth();
 
   // 处理表单提交
-  const onFinish = (values) => {
-    login(values);
+  const onFinish = async (values) => {
+    try {
+      await login(values.account, values.password);
+      Toast.show({
+        icon: 'success',
+        content: '登录成功！',
+      });
+      // 登录成功后跳转到主页
+      navigate('/');
+    } catch (error) {
+      Toast.show({
+        icon: 'fail',
+        content: error.message || '登录失败，请重试',
+      });
+    }
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: '#f5f5f5',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
-      <div style={{ 
-        width: '100%', 
-        maxWidth: '614px',
-        margin: '0 auto'
-      }}>
-        <Card 
-          style={{ 
-            borderRadius: '12px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-            background: '#fff'
-          }}
-        >
-          <div style={{ padding: '12px' }}>
-            <div style={{ 
-              textAlign: 'center', 
-              marginBottom: '40px',
-              color: '#333'
-            }}>
-              <h2 style={{ 
-                margin: '0 0 12px 0', 
-                fontSize: '28px',
-                fontWeight: '500',
-                color: '#1a1a1a'
-              }}>
-                登录
+    <div className={styles.loginContainer}>
+      {/* 背景装饰 */}
+      <div className={styles.backgroundDecoration1} />
+      <div className={styles.backgroundDecoration2} />
+
+      <div className={styles.loginCard}>
+        <Card className={styles.card}>
+          {/* 顶部装饰条 */}
+          {/* <div className={styles.decorationBar} /> */}
+
+          <div className={styles.cardContent}>
+            {/* Logo区域 */}
+            <div className={styles.logoSection}>
+              <div className={styles.logoIcon}>
+                <UserOutline />
+              </div>
+              <h2 className={styles.title}>
+                欢迎回来
               </h2>
-              <p style={{ 
-                margin: 0, 
-                color: '#666',
-                fontSize: '14px'
-              }}>
-                请输入您的账号和密码
+              <p className={styles.subtitle}>
+                请登录您的账户继续使用
               </p>
             </div>
 
             <Form
               form={form}
               onFinish={onFinish}
-              layout="vertical"
+              layout="horizontal"
+              mode='card'
               footer={
                 <Button
                   block
                   color="primary"
                   size="large"
                   loading={loading}
-                  style={{
-                    borderRadius: '8px',
-                    height: '48px',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                    marginTop: '32px'
-                  }}
+                  className={styles.loginButton}
                   type="submit"
                 >
                   {loading ? '登录中...' : '登录'}
                 </Button>
               }
+              style={{
+                '--prefix-width': '40px'
+              }}
             >
               <Form.Item
                 name="account"
-                label="账号"
+                label={<span className={styles.formLabel}>账号</span>}
                 rules={[
                   { required: true, message: '请输入账号' },
                   { min: 3, message: '账号至少3个字符' }
                 ]}
               >
                 <Input
-                  placeholder="请输入账号"
-                  prefix={<UserOutline />}
-                  style={{
-                    borderRadius: '8px',
-                    height: '48px'
-                  }}
+                  placeholder="请输入您的账号"
+                  clearable
                 />
               </Form.Item>
 
               <Form.Item
                 name="password"
-                label="密码"
+                label={<span className={styles.formLabel}>密码</span>}
                 rules={[
                   { required: true, message: '请输入密码' },
                   { min: 6, message: '密码至少6个字符' }
                 ]}
+                extra={
+                  <div 
+                    onClick={() => setVisible(!visible)}
+                    className={`${styles.eyeIcon} ${visible ? styles.visible : ''}`}
+                  >
+                    {visible ? <EyeOutline /> : <EyeInvisibleOutline />}
+                  </div>
+                }
               >
                 <Input
-                  placeholder="请输入密码"
+                  placeholder="请输入您的密码"
                   type={visible ? 'text' : 'password'}
-                  prefix={<LockOutline />}
-                  extra={
-                    <div onClick={() => setVisible(!visible)}>
-                      {visible ? <EyeOutline /> : <EyeInvisibleOutline />}
-                    </div>
-                  }
-                  style={{
-                    borderRadius: '8px',
-                    height: '48px'
-                  }}
+                  clearable
                 />
               </Form.Item>
             </Form>
+
+            {/* 底部链接 */}
+            <div className={styles.bottomLinks}>
+              <span className={styles.registerLink}>
+                还没有账户？{' '}
+                <a onClick={() => Toast.show({
+                  content: '暂未开放注册',
+                })}>
+                  立即注册
+                </a>
+              </span>
+            </div>
           </div>
         </Card>
       </div>

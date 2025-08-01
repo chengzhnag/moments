@@ -20,6 +20,15 @@ class ApiClient {
   }
 
   /**
+   * 恢复认证状态（用于从本地存储恢复）
+   * @param {string} account - 用户账号
+   * @param {string} password - 用户密码
+   */
+  restoreAuth(account, password) {
+    this.setAuth(account, password);
+  }
+
+  /**
    * 清除认证信息
    */
   clearAuth() {
@@ -120,22 +129,27 @@ export const authApi = {
     try {
       // 设置临时认证信息用于验证
       api.setAuth(account, password);
-      
+
       // 尝试获取用户列表来验证认证是否成功
       // 如果认证失败会抛出错误
       const users = await api.get('/auth');
-      
+      console.log('users：', users);
+
       // 认证成功，保存当前用户信息
-      api.currentUser = { users, authenticated: true };
+      api.currentUser = {
+        ...users,
+        authenticated: true,
+        loginTime: new Date().toISOString()
+      };
       return { success: true, user: api.currentUser };
-      
+
     } catch (error) {
       // 认证失败，清除认证信息
       api.clearAuth();
-      
+
       // 根据错误类型返回不同的错误信息
-      if (error.message.includes('Authentication failed') || 
-          error.message.includes('Unauthorized')) {
+      if (error.message.includes('Authentication failed') ||
+        error.message.includes('Unauthorized')) {
         throw new Error('账号或密码错误');
       } else {
         throw new Error('登录失败: ' + error.message);
@@ -166,6 +180,33 @@ export const authApi = {
    */
   getCurrentUser() {
     return api.currentUser;
+  },
+
+  /**
+   * 验证当前认证状态是否有效
+   * @returns {Promise<boolean>} 认证是否有效
+   */
+  async validateAuth() {
+    try {
+      if (!this.isAuthenticated()) {
+        return false;
+      }
+
+      // 尝试访问需要认证的接口来验证
+      await api.get('/auth');
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  /**
+   * 恢复认证状态
+   * @param {string} account - 用户账号
+   * @param {string} password - 用户密码
+   */
+  restoreAuth(account, password) {
+    api.restoreAuth(account, password);
   }
 };
 
