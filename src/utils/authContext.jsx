@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuthStorage, useAutoLogin, useLogin, useLogout } from './authUtils';
 import { authApi } from './api';
+import { 
+  saveAuthInfo, 
+  getAuthInfo, 
+  clearAuthCache, 
+  isAuthExpired,
+  canAutoLogin,
+  getCurrentUser
+} from './authUtils';
 
 const AuthContext = createContext();
 
@@ -13,78 +20,83 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // 使用认证存储Hook
-  const { 
-    user, 
-    credentials, 
-    clearAuthCache, 
-    isAuthExpired 
-  } = useAuthStorage();
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState(null);
 
-  // 使用自动登录Hook
-  const { 
-    autoLoginLoading, 
-    runAutoLogin, 
-    canAutoLogin 
-  } = useAutoLogin();
-
-  // 使用登录Hook
-  const { 
-    loginLoading, 
-    runLogin, 
-    loginError 
-  } = useLogin();
-
-  // 使用登出Hook
-  const { logout } = useLogout();
-
-  // 检查初始认证状态
+  // 初始化认证状态
   useEffect(() => {
-    const checkAuth = async () => {
+    const initAuth = async () => {
       try {
-        // 如果有缓存的认证信息且未过期，尝试自动登录
-        if (canAutoLogin) {
-          await runAutoLogin();
-        } else if (credentials && isAuthExpired()) {
-          // 认证已过期，清除缓存
-          clearAuthCache();
+        // 检查是否有有效的认证信息
+        if (canAutoLogin()) {
+          const authInfo = getAuthInfo();
+          const credentials = authInfo.credentials;
+          
+          // 恢复API认证状态
+          authApi.restoreAuth(credentials.account, credentials.password);
+          
+          // 直接使用缓存的用户信息，避免额外的API调用
+          setUser(authInfo.user);
+        } else {
+          // 认证已过期或不存在，清除缓存
+          if (getAuthInfo()) {
+            clearAuthCache();
+            authApi.clearAuth();
+          }
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error('初始化认证失败:', error);
         clearAuthCache();
+        authApi.clearAuth();
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
+    initAuth();
   }, []);
 
   // 登录方法
   const login = async (account, password) => {
+    setLoginLoading(true);
+    setLoginError(null);
+    
     try {
-      const result = await runLogin(account, password);
+      const result = await authApi.login(account, password);
+      
+      // 保存认证信息到本地存储
+      saveAuthInfo(result.user, account, password);
+      
+      // 更新状态
+      setUser(result.user);
+      
       return result;
     } catch (error) {
+      setLoginError(error.message);
       throw error;
+    } finally {
+      setLoginLoading(false);
     }
   };
 
   // 登出方法
-  const handleLogout = () => {
-    logout();
+  const logout = () => {
+    authApi.logout();
+    clearAuthCache();
+    setUser(null);
+    setLoginError(null);
   };
 
   const value = {
     user,
-    loading: loading || autoLoginLoading || loginLoading,
+    loading: loading || loginLoading,
     login,
-    logout: handleLogout,
+    logout,
     isAuthenticated: !!user,
     loginError,
-    canAutoLogin
+    canAutoLogin: canAutoLogin()
   };
 
   return (
