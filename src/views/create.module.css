@@ -1,0 +1,362 @@
+/* 新建页面容器 */
+.createContainer {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 内容区域 */
+.content {
+  flex: 1;
+  padding: 16px;
+  background-color: #fff;
+  margin: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 表单样式 */
+.form {
+  width: 100%;
+}
+
+/* 用户信息区域 */
+.userInfo {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  margin-bottom: 16px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 12px;
+  border: 2px solid #e8e8e8;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.userDetails {
+  flex: 1;
+}
+
+.userName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.userRole {
+  font-size: 12px;
+  color: #666;
+  background-color: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* 内容输入区域 */
+.contentInput {
+  margin-bottom: 20px;
+}
+
+.contentInput :global(.adm-text-area) {
+  border: none;
+  background-color: transparent;
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 0;
+  min-height: 120px;
+}
+
+.contentInput :global(.adm-text-area-count) {
+  color: #999;
+  font-size: 12px;
+  text-align: right;
+  margin-top: 8px;
+}
+
+/* 图片上传区域 */
+.imageSection {
+  margin-bottom: 20px;
+}
+
+.imageUploader {
+  width: 100%;
+}
+
+.imageUploader :global(.adm-image-uploader) {
+  --cell-size: 80px;
+  --gap: 8px;
+}
+
+.imageUploader :global(.adm-image-uploader-cell) {
+  border-radius: 8px;
+  border: 2px dashed #d9d9d9;
+  background-color: #fafafa;
+}
+
+.imageUploader :global(.adm-image-uploader-cell:hover) {
+  border-color: #1890ff;
+  background-color: #f0f8ff;
+}
+
+.imageUploader :global(.adm-image-uploader-cell-image) {
+  border-radius: 6px;
+}
+
+/* 工具栏 */
+.toolbar {
+  padding: 16px 0;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 20px;
+}
+
+.toolbar :global(.adm-space) {
+  width: 100%;
+  justify-content: space-around;
+}
+
+.toolbar :global(.adm-button) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+  font-size: 12px;
+}
+
+.toolbar :global(.adm-button:hover) {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.toolbar :global(.adm-button:disabled) {
+  background-color: #f8f9fa;
+  color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.toolbar :global(.adm-button svg) {
+  font-size: 20px;
+}
+
+/* 表情选择器 */
+.emojiPicker {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}
+
+.emojiHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.emojiHeader :global(.antd-mobile-icon) {
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+}
+
+.emojiGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.emojiItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.emojiItem:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.1);
+}
+
+.emojiItem:active {
+  transform: scale(0.95);
+}
+
+/* 位置选择器 */
+.locationPicker {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}
+
+.locationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.locationHeader :global(.antd-mobile-icon) {
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+}
+
+.locationPicker :global(.adm-list) {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.locationPicker :global(.adm-list-item) {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.locationPicker :global(.adm-list-item:last-child) {
+  border-bottom: none;
+}
+
+.locationPicker :global(.adm-radio) {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.locationPicker :global(.adm-radio-label) {
+  font-size: 14px;
+  color: #333;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .content {
+    margin: 4px;
+    padding: 12px;
+  }
+
+  .emojiGrid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .emojiItem {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  .toolbar :global(.adm-button) {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .toolbar :global(.adm-button svg) {
+    font-size: 18px;
+  }
+}
+
+/* 动画效果 */
+.createContainer {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 加载状态 */
+.createContainer :global(.adm-loading) {
+  color: #1890ff;
+}
+
+/* 成功状态 */
+.createContainer :global(.adm-toast-success) {
+  background-color: #52c41a;
+  color: #fff;
+}
+
+/* 错误状态 */
+.createContainer :global(.adm-toast-fail) {
+  background-color: #ff4d4f;
+  color: #fff;
+}
+
+/* 导航栏样式调整 */
+.createContainer :global(.adm-nav-bar) {
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.createContainer :global(.adm-nav-bar-title) {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.createContainer :global(.adm-nav-bar-back-arrow) {
+  font-size: 20px;
+  color: #333;
+}
+
+/* 按钮样式调整 */
+.createContainer :global(.adm-button-primary) {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: #fff;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.createContainer :global(.adm-button-primary:disabled) {
+  background-color: #d9d9d9;
+  border-color: #d9d9d9;
+  color: #999;
+}
+
+/* 弹窗样式调整 */
+.createContainer :global(.adm-popup) {
+  border-radius: 12px 12px 0 0;
+}
+
+.createContainer :global(.adm-popup-body) {
+  border-radius: 12px 12px 0 0;
+} 
