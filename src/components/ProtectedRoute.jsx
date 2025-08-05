@@ -5,6 +5,8 @@ import { SpinLoading } from 'antd-mobile';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  console.log('isAuthenticated🧐', isAuthenticated);
+  console.log('loading🧐', loading);
 
   if (loading) {
     return (

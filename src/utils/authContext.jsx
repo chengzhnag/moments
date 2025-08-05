@@ -20,20 +20,27 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState(null);
 
   useEffect(() => {
     const initAuth = async () => {
-      const authInfo = getAuthInfo();
-      if (authInfo) {
-        if (isAuthExpired()) {
-          login(authInfo.credentials.account, authInfo.credentials.password);
-        } else {
-          authApi.saveAuth(authInfo.credentials.account, authInfo.credentials.password, authInfo.user);
-          setUser(authInfo.user);
+      try {
+        const authInfo = getAuthInfo();
+        console.log('authInfo🧐', authInfo);
+        if (authInfo) {
+          if (isAuthExpired()) {
+            await login(authInfo.credentials.account, authInfo.credentials.password);
+          } else {
+            await authApi.saveAuth(authInfo.credentials.account, authInfo.credentials.password, authInfo.user);
+            setUser(authInfo.user);
+          }
         }
+      } catch (e) {
+        setLoading(false);
+      } finally {
+        setLoading(false);
       }
     };
     initAuth();
