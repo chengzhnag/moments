@@ -20,15 +20,6 @@ class ApiClient {
   }
 
   /**
-   * 恢复认证状态（用于从本地存储恢复）
-   * @param {string} account - 用户账号
-   * @param {string} password - 用户密码
-   */
-  restoreAuth(account, password) {
-    this.setAuth(account, password);
-  }
-
-  /**
    * 清除认证信息
    */
   clearAuth() {
@@ -146,6 +137,7 @@ export const authApi = {
     } catch (error) {
       // 认证失败，清除认证信息
       api.clearAuth();
+      console.log('error：', error, error?.message);
 
       // 根据错误类型返回不同的错误信息
       if (error.message.includes('Authentication failed') ||
@@ -181,33 +173,6 @@ export const authApi = {
   getCurrentUser() {
     return api.currentUser;
   },
-
-  /**
-   * 验证当前认证状态是否有效
-   * @returns {Promise<boolean>} 认证是否有效
-   */
-  async validateAuth() {
-    try {
-      if (!this.isAuthenticated()) {
-        return false;
-      }
-
-      // 尝试访问需要认证的接口来验证
-      await api.get('/auth');
-      return true;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  /**
-   * 恢复认证状态
-   * @param {string} account - 用户账号
-   * @param {string} password - 用户密码
-   */
-  restoreAuth(account, password) {
-    api.restoreAuth(account, password);
-  }
 };
 
 // Users API 封装
