@@ -68,14 +68,6 @@ export const isAuthExpired = (expireHours = 24) => {
 };
 
 /**
- * 检查是否可以自动登录
- */
-export const canAutoLogin = () => {
-  const authInfo = getAuthInfo();
-  return authInfo && !isAuthExpired();
-};
-
-/**
  * 获取当前用户信息
  */
 export const getCurrentUser = () => {

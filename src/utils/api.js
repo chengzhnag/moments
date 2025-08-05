@@ -141,12 +141,22 @@ export const authApi = {
 
       // 根据错误类型返回不同的错误信息
       if (error.message.includes('Authentication failed') ||
-        error.message.includes('Unauthorized')) {
+        error.message.includes('Unauthorized') ||
+        error.message.includes('Invalid password')) {
         throw new Error('账号或密码错误');
       } else {
         throw new Error('登录失败: ' + error.message);
       }
     }
+  },
+  
+  async saveAuth(account, password, user) {
+    api.setAuth(account, password);
+    api.currentUser = {
+      ...user,
+      authenticated: true,
+      loginTime: new Date().toISOString()
+    };
   },
 
   /**
