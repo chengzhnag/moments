@@ -9,6 +9,7 @@ import {
 } from "antd-mobile";
 import { useMount } from "ahooks";
 import { useAuth } from "../utils/authContext";
+import { recordsApi } from "../utils/api";
 import {
   HeartOutline,
   MessageOutline,
@@ -22,214 +23,122 @@ import styles from './entry.module.css';
 const Entry = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      user: {
-        name: "大梦一场的张先生",
-        avatar: "https://via.placeholder.com/40x40/4A90E2/FFFFFF?text=张",
-        verified: true
-      },
-      content: "",
-      images: ["https://via.placeholder.com/400x500/333333/FFFFFF?text=Profile+Photo"],
-      likes: 128,
-      comments: 32,
-      shares: 8,
-      time: "刚刚",
-      location: "",
-      isLargeImage: true
-    },
-    {
-      id: 2,
-      user: {
-        name: "张梦梦",
-        avatar: "https://via.placeholder.com/40x40/52C41A/FFFFFF?text=梦",
-        verified: false
-      },
-      content: "例案分享!大一生学调理一的周效果分享,伙伴们都说玉竹的果效太赞了👍,两条量的也不大,这么显明的好转。慧智妈妈选择期假给孩子调理身体,假期督监孩子时按吃膏,争取假把期一学期成造的身体",
-      images: [
-        "https://via.placeholder.com/150x150/FF6B6B/FFFFFF?text=7.21",
-        "https://via.placeholder.com/150x150/4ECDC4/FFFFFF?text=7.28"
-      ],
-      likes: 89,
-      comments: 15,
-      shares: 3,
-      time: "2小时前",
-      location: "赣州市·宝妈来吧爱尔小儿推拿(于都店)"
-    },
-    {
-      id: 3,
-      user: {
-        name: "刘经萍-上殴姨女儿",
-        avatar: "https://via.placeholder.com/40x40/FF9F43/FFFFFF?text=刘",
-        verified: false
-      },
-      content: "吃饭 😊",
-      images: [
-        "https://via.placeholder.com/120x120/FFA726/FFFFFF?text=锅",
-        "https://via.placeholder.com/120x120/8D6E63/FFFFFF?text=碗",
-        "https://via.placeholder.com/120x120/4CAF50/FFFFFF?text=桌"
-      ],
-      likes: 45,
-      comments: 8,
-      shares: 2,
-      time: "3小时前",
-      location: "赣州市・幸福家园小区"
-    }
-  ]);
-
+  const [posts, setPosts] = useState([]);
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({});
   const handler = useRef(null);
   const containerRef = useRef(null);
 
-  useMount(() => {
-    console.log('entry', document.documentElement.clientWidth);
-
-    // 模拟初始数据加载
-    setTimeout(() => {
-      setInitialLoading(false);
-    }, 2000);
-  });
-
-  // 生成更多帖子数据的函数
-  const generateMorePosts = useCallback(() => {
-    const newPosts = [];
-    const baseId = posts.length;
-
-    for (let i = 0; i < 5; i++) {
-      const postId = baseId + i + 1;
-      const userNames = ["小明", "小红", "小李", "小王", "小张", "小赵", "小钱", "小孙"];
-      const contents = [
-        "今天天气真不错，适合出去走走 🌞",
-        "分享一个有趣的小故事，希望大家喜欢 😊",
-        "刚完成了一个重要的项目，感觉很有成就感 💪",
-        "周末和朋友一起聚餐，美食让人心情愉悦 🍕",
-        "学习新技能的过程虽然辛苦，但收获满满 📚",
-        "运动后的感觉真好，身体和心情都很棒 🏃‍♂️",
-        "和家人一起的时光总是最珍贵的 ❤️",
-        "工作中的小确幸，同事们的支持让我很感动 🤝"
-      ];
-
-      newPosts.push({
-        id: postId,
-        user: {
-          name: userNames[postId % userNames.length],
-          avatar: `https://via.placeholder.com/40x40/${Math.floor(Math.random() * 16777215).toString(16)}/FFFFFF?text=${userNames[postId % userNames.length].charAt(0)}`,
-          verified: Math.random() > 0.7
-        },
-        content: contents[postId % contents.length],
-        images: Math.random() > 0.3 ? [
-          `https://via.placeholder.com/150x150/${Math.floor(Math.random() * 16777215).toString(16)}/FFFFFF?text=IMG${postId}`,
-          ...(Math.random() > 0.5 ? [`https://via.placeholder.com/150x150/${Math.floor(Math.random() * 16777215).toString(16)}/FFFFFF?text=IMG${postId + 1}`] : [])
-        ] : [],
-        likes: Math.floor(Math.random() * 200) + 10,
-        comments: Math.floor(Math.random() * 50) + 5,
-        shares: Math.floor(Math.random() * 20) + 1,
-        time: `${Math.floor(Math.random() * 24) + 1}小时前`,
-        location: Math.random() > 0.5 ? "赣州市・某小区" : "",
-        isLargeImage: Math.random() > 0.8
-      });
+  // 转换API数据为前端展示格式
+  const transformRecordToPost = (record) => {
+    // 解析媒体内容
+    let images = [];
+    if (record.content_media) {
+      try {
+        const mediaData = JSON.parse(record.content_media);
+        if (Array.isArray(mediaData)) {
+          images = mediaData;
+        }
+      } catch (error) {
+        console.error('解析媒体内容失败:', error);
+      }
     }
 
-    return newPosts;
-  }, [posts.length]);
+    // 计算时间差
+    const getTimeAgo = (createdAt) => {
+      if (!createdAt) return '刚刚';
+      const now = new Date();
+      const created = new Date(createdAt);
+      const diffMs = now - created;
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+        return `${diffDays}天前`;
+      } else if (diffHours > 0) {
+        return `${diffHours}小时前`;
+      } else {
+        return '刚刚';
+      }
+    };
+
+    return {
+      id: record.id,
+      user: {
+        name: record.creator?.name || `用户${record.creator_id}`,
+        avatar: record.creator?.avatar || `https://via.placeholder.com/40x40/${Math.floor(Math.random() * 16777215).toString(16)}/FFFFFF?text=${(record.creator?.name || 'U').charAt(0)}`,
+        verified: record.creator?.role === 'admin'
+      },
+      content: record.content_text || '',
+      images: images,
+      likes: record.extra_data?.likes || Math.floor(Math.random() * 200) + 10,
+      comments: record.extra_data?.comments || Math.floor(Math.random() * 50) + 5,
+      shares: record.extra_data?.shares || Math.floor(Math.random() * 20) + 1,
+      time: getTimeAgo(record.created_at),
+      location: record.extra_data?.location || '',
+      isLargeImage: images.length === 1 && Math.random() > 0.5
+    };
+  };
+
+  // 获取记录数据
+  const fetchRecords = useCallback(async (pageNum = 1, isRefresh = false) => {
+    try {
+      setLoading(true);
+      const response = await recordsApi.getRecords({
+        page: pageNum,
+        limit: 10
+      });
+
+      const transformedPosts = response.records?.map(transformRecordToPost) || [];
+      
+      if (isRefresh) {
+        setPosts(transformedPosts);
+      } else {
+        setPosts(prev => [...prev, ...transformedPosts]);
+      }
+
+      setPagination(response.pagination || {});
+      setHasMore(response.pagination?.has_next || false);
+      
+    } catch (error) {
+      console.error('获取记录失败:', error);
+      Toast.show({
+        content: '获取数据失败，请重试',
+        position: 'center',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useMount(() => {
+    fetchRecords(1, true).finally(() => {
+      setInitialLoading(false);
+    });
+  });
 
   // 刷新数据
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-
-    // 模拟API请求延迟
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // 重置到初始数据
-    const initialPosts = [
-      {
-        id: 1,
-        user: {
-          name: "大梦一场的张先生",
-          avatar: "https://via.placeholder.com/40x40/4A90E2/FFFFFF?text=张",
-          verified: true
-        },
-        content: "刚刚发布了一条新动态！",
-        images: ["https://via.placeholder.com/400x500/333333/FFFFFF?text=New+Photo"],
-        likes: 128,
-        comments: 32,
-        shares: 8,
-        time: "刚刚",
-        location: "",
-        isLargeImage: true
-      },
-      {
-        id: 2,
-        user: {
-          name: "张梦梦",
-          avatar: "https://via.placeholder.com/40x40/52C41A/FFFFFF?text=梦",
-          verified: false
-        },
-        content: "例案分享!大一生学调理一的周效果分享,伙伴们都说玉竹的果效太赞了👍,两条量的也不大,这么显明的好转。慧智妈妈选择期假给孩子调理身体,假期督监孩子时按吃膏,争取假把期一学期成造的身体",
-        images: [
-          "https://via.placeholder.com/150x150/FF6B6B/FFFFFF?text=7.21",
-          "https://via.placeholder.com/150x150/4ECDC4/FFFFFF?text=7.28"
-        ],
-        likes: 89,
-        comments: 15,
-        shares: 3,
-        time: "2小时前",
-        location: "赣州市·宝妈来吧爱尔小儿推拿(于都店)"
-      },
-      {
-        id: 3,
-        user: {
-          name: "刘经萍-上殴姨女儿",
-          avatar: "https://via.placeholder.com/40x40/FF9F43/FFFFFF?text=刘",
-          verified: false
-        },
-        content: "吃饭 😊",
-        images: [
-          "https://via.placeholder.com/120x120/FFA726/FFFFFF?text=锅",
-          "https://via.placeholder.com/120x120/8D6E63/FFFFFF?text=碗",
-          "https://via.placeholder.com/120x120/4CAF50/FFFFFF?text=桌"
-        ],
-        likes: 45,
-        comments: 8,
-        shares: 2,
-        time: "3小时前",
-        location: "赣州市・幸福家园小区"
-      }
-    ];
-
-    setPosts(initialPosts);
+    await fetchRecords(1, true);
     setPage(1);
-    setHasMore(true);
     setLikedPosts(new Set());
     setRefreshing(false);
-  }, []);
+  }, [fetchRecords]);
 
   // 加载更多数据
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
 
-    setLoading(true);
-
-    // 模拟API请求延迟
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const newPosts = generateMorePosts();
-    setPosts(prev => [...prev, ...newPosts]);
-    setPage(prev => prev + 1);
-
-    // 模拟数据加载完毕的情况（第10页后停止加载）
-    if (page >= 2) {
-      setHasMore(false);
-    }
-
-    setLoading(false);
-  }, [loading, hasMore, page, generateMorePosts]);
+    const nextPage = page + 1;
+    await fetchRecords(nextPage, false);
+    setPage(nextPage);
+  }, [loading, hasMore, page, fetchRecords]);
 
   // 滚动监听
   const handleScroll = useCallback(() => {
@@ -286,8 +195,21 @@ const Entry = () => {
         description: '删除后数据不可恢复',
         danger: true,
         bold: true,
-        onClick: () => {
-          console.log('删除', postId);
+        onClick: async () => {
+          try {
+            await recordsApi.deleteRecord(postId);
+            setPosts(prev => prev.filter(post => post.id !== postId));
+            Toast.show({
+              content: '删除成功',
+              position: 'center',
+            });
+          } catch (error) {
+            console.error('删除失败:', error);
+            Toast.show({
+              content: '删除失败，请重试',
+              position: 'center',
+            });
+          }
           handler.current?.close();
         },
       },
