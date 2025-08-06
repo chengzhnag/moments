@@ -165,12 +165,31 @@
   overflow: hidden;
 }
 
-.postImages.gridImages:nth-child(1) {
+/* 根据图片数量设置不同的网格布局 */
+.gridImages[data-count="2"] {
   grid-template-columns: repeat(2, 1fr);
 }
 
-.postImages.gridImages:nth-child(2) {
+.gridImages[data-count="3"] {
   grid-template-columns: repeat(3, 1fr);
+}
+
+.gridImages[data-count="4"] {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.gridImages[data-count="5"],
+.gridImages[data-count="6"] {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
+.gridImages[data-count="7"],
+.gridImages[data-count="8"],
+.gridImages[data-count="9"] {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
 }
 
 .postImage {

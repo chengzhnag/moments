@@ -92,7 +92,7 @@ const Entry = () => {
       shares: extra_data?.shares || 0,
       time: getTimeAgo(record.created_at),
       location: extra_data?.location || '',
-      isLargeImage: images.length === 1 && Math.random() > 0.5
+      isLargeImage: images.length === 1
     };
   };
 
@@ -294,7 +294,10 @@ const Entry = () => {
       )}
 
       {post.images && post.images.length > 0 && (
-        <div className={`${styles.postImages} ${post.isLargeImage ? styles.largeImage : styles.gridImages}`}>
+        <div 
+          className={`${styles.postImages} ${post.isLargeImage ? styles.largeImage : styles.gridImages}`}
+          data-count={post.isLargeImage ? undefined : post.images.length}
+        >
           {post.images.map((image, index) => (
             <div key={index} onClick={() => handleImageClick(post.images, index)} className={styles.imageWrapper}>
               <Image
@@ -302,6 +305,7 @@ const Entry = () => {
                 width="100%"
                 height="100%"
                 fit="cover"
+                lazy
                 className={styles.postImage}
               />
             </div>
