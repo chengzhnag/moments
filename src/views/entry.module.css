@@ -134,6 +134,7 @@
   color: #333;
   margin-bottom: 12px;
   word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .postImages {

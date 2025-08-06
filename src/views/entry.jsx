@@ -37,7 +37,7 @@ const Entry = () => {
   // 转换API数据为前端展示格式
   const transformRecordToPost = (record) => {
     // 解析媒体内容
-    let images = [];
+    let images = [], extra_data = {};
     if (record.content_media) {
       try {
         const mediaData = JSON.parse(record.content_media);
@@ -48,12 +48,23 @@ const Entry = () => {
         console.error('解析媒体内容失败:', error);
       }
     }
+    if (record.extra_data) {
+      try {
+        extra_data = JSON.parse(record.extra_data);
+      } catch (error) {
+        console.error('解析额外数据失败:', error);
+      }
+    }
 
     // 计算时间差
     const getTimeAgo = (createdAt) => {
       if (!createdAt) return '刚刚';
       const now = new Date();
       const created = new Date(createdAt);
+      
+      // 增加8小时到创建时间
+      created.setHours(created.getHours() + 8);
+      
       const diffMs = now - created;
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -70,17 +81,17 @@ const Entry = () => {
     return {
       id: record.id,
       user: {
-        name: record.creator?.name || `用户${record.creator_id}`,
-        avatar: record.creator?.avatar || `https://via.placeholder.com/40x40/${Math.floor(Math.random() * 16777215).toString(16)}/FFFFFF?text=${(record.creator?.name || 'U').charAt(0)}`,
-        verified: record.creator?.role === 'admin'
+        name: record.creator_name,
+        avatar: extra_data?.avatar || `https://via.placeholder.com/40x40/${Math.floor(Math.random() * 16777215).toString(16)}/FFFFFF?text=${(record.creator?.name || 'U').charAt(0)}`,
+        verified: record?.role === 'admin'
       },
       content: record.content_text || '',
       images: images,
-      likes: record.extra_data?.likes || Math.floor(Math.random() * 200) + 10,
-      comments: record.extra_data?.comments || Math.floor(Math.random() * 50) + 5,
-      shares: record.extra_data?.shares || Math.floor(Math.random() * 20) + 1,
+      likes: extra_data?.likes || 0,
+      comments: extra_data?.comments || 0,
+      shares: extra_data?.shares || 0,
       time: getTimeAgo(record.created_at),
-      location: record.extra_data?.location || '',
+      location: extra_data?.location || '',
       isLargeImage: images.length === 1 && Math.random() > 0.5
     };
   };
