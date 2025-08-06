@@ -67,6 +67,7 @@
 /* 内容输入区域 */
 .contentInput {
   margin-bottom: 20px;
+  padding: 0;
 }
 
 .contentInput :global(.adm-text-area) {
@@ -87,7 +88,7 @@
 
 /* 图片上传区域 */
 .imageSection {
-  margin-bottom: 20px;
+  padding: 0;
 }
 
 .imageUploader {
@@ -114,176 +115,12 @@
   border-radius: 6px;
 }
 
-/* 工具栏 */
-.toolbar {
-  padding: 16px 0;
-  border-top: 1px solid #f0f0f0;
-  margin-top: 20px;
-}
-
-.toolbar :global(.adm-space) {
-  width: 100%;
-  justify-content: space-around;
-}
-
-.toolbar :global(.adm-button) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  color: #495057;
-  font-size: 12px;
-}
-
-.toolbar :global(.adm-button:hover) {
-  background-color: #e9ecef;
-  border-color: #dee2e6;
-}
-
-.toolbar :global(.adm-button:disabled) {
-  background-color: #f8f9fa;
-  color: #adb5bd;
-  cursor: not-allowed;
-}
-
-.toolbar :global(.adm-button svg) {
-  font-size: 20px;
-}
-
-/* 表情选择器 */
-.emojiPicker {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background-color: #fff;
-}
-
-.emojiHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.emojiHeader :global(.antd-mobile-icon) {
-  font-size: 20px;
-  color: #999;
-  cursor: pointer;
-}
-
-.emojiGrid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 8px;
-  padding: 16px;
-  overflow-y: auto;
-}
-
-.emojiItem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  font-size: 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.emojiItem:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.1);
-}
-
-.emojiItem:active {
-  transform: scale(0.95);
-}
-
-/* 位置选择器 */
-.locationPicker {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background-color: #fff;
-}
-
-.locationHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.locationHeader :global(.antd-mobile-icon) {
-  font-size: 20px;
-  color: #999;
-  cursor: pointer;
-}
-
-.locationPicker :global(.adm-list) {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.locationPicker :global(.adm-list-item) {
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.locationPicker :global(.adm-list-item:last-child) {
-  border-bottom: none;
-}
-
-.locationPicker :global(.adm-radio) {
-  width: 100%;
-  justify-content: flex-start;
-  gap: 12px;
-}
-
-.locationPicker :global(.adm-radio-label) {
-  font-size: 14px;
-  color: #333;
-}
 
 /* 响应式设计 */
 @media (max-width: 480px) {
   .content {
     margin: 4px;
     padding: 12px;
-  }
-
-  .emojiGrid {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 6px;
-    padding: 12px;
-  }
-
-  .emojiItem {
-    width: 36px;
-    height: 36px;
-    font-size: 20px;
-  }
-
-  .toolbar :global(.adm-button) {
-    padding: 6px 8px;
-    font-size: 11px;
-  }
-
-  .toolbar :global(.adm-button svg) {
-    font-size: 18px;
   }
 }
 

@@ -5,7 +5,7 @@ import {
   ImageViewer, DotLoading,
   SafeArea, PullToRefresh,
   Skeleton, ActionSheet,
-  Toast
+  Toast, ErrorBlock
 } from "antd-mobile";
 import { useMount } from "ahooks";
 import { useAuth } from "../utils/authContext";
@@ -22,7 +22,7 @@ import styles from './entry.module.css';
 
 const Entry = () => {
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [loading, setLoading] = useState(false);
@@ -95,7 +95,7 @@ const Entry = () => {
       });
 
       const transformedPosts = response.records?.map(transformRecordToPost) || [];
-      
+
       if (isRefresh) {
         setPosts(transformedPosts);
       } else {
@@ -104,7 +104,7 @@ const Entry = () => {
 
       setPagination(response.pagination || {});
       setHasMore(response.pagination?.has_next || false);
-      
+
     } catch (error) {
       console.error('获取记录失败:', error);
       Toast.show({
@@ -325,24 +325,15 @@ const Entry = () => {
       <div className={styles.header}>
         <h1 className={styles.appTitle}>瞬间📝记录</h1>
         <div className={styles.headerActions}>
-          <Button
-            size="small"
-            onClick={() => navigate("/create")}
-            className={styles.createBtn}
-          >
-            发布
-          </Button>
-          <Button
-            size="small"
-            fill="outline"
-            onClick={() => {
-              logout();
-              navigate("/login");
-            }}
-            style={{ marginLeft: '8px' }}
-          >
-            登出
-          </Button>
+          {user && user.role === 'admin' && (
+            <Button
+              size="small"
+              onClick={() => navigate("/create")}
+              className={styles.createBtn}
+            >
+              发布
+            </Button>
+          )}
         </div>
       </div>
       <div
@@ -379,6 +370,20 @@ const Entry = () => {
                   <span className={styles.noMoreText}>没有更多内容了</span>
                 </div>
               )}
+              {
+                posts.length === 0 && (
+                  <ErrorBlock
+                    status="empty"
+                    title="暂无内容"
+                    description={
+                      <div>
+                        可点击前往
+                        <a href="/create" style={{ marginLeft: 2 }}>发布</a>
+                      </div>
+                    }
+                  />
+                )
+              }
             </>
           )}
         </PullToRefresh>
