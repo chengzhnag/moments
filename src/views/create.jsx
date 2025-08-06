@@ -71,7 +71,7 @@ const Create = () => {
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {
         navigate('/');
-      }, 1500);
+      }, 600);
 
     } catch (error) {
       console.error('发布失败:', error);
