@@ -22,6 +22,7 @@ const CommentModal = ({
   const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const textAreaRef = useRef(null);
   const handler = useRef(null);
 
@@ -98,6 +99,41 @@ const CommentModal = ({
     }
   };
 
+  // 键盘高度监听
+  useEffect(() => {
+    if (!visible) return;
+
+    const handleViewportChange = () => {
+      if (window.visualViewport) {
+        const viewportHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        const heightDiff = windowHeight - viewportHeight;
+        setKeyboardHeight(heightDiff > 150 ? heightDiff : 0);
+      }
+    };
+
+    // 监听视口变化
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      return () => {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+      };
+    }
+
+    // 兼容性处理：监听窗口大小变化
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+      const heightDiff = window.screen.height - currentHeight;
+      setKeyboardHeight(heightDiff > 150 ? heightDiff : 0);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      setKeyboardHeight(0);
+    };
+  }, [visible]);
+
   // 当弹窗打开时聚焦输入框
   useEffect(() => {
     if (visible && textAreaRef.current) {
@@ -114,7 +150,11 @@ const CommentModal = ({
       visible={visible}
       onMaskClick={onClose}
       position='bottom'
-      bodyStyle={{ height: '70vh' }}
+      bodyStyle={{ 
+        height: keyboardHeight > 0 ? `calc(70vh + ${keyboardHeight}px)` : '70vh',
+        maxHeight: keyboardHeight > 0 ? `calc(100vh - ${keyboardHeight}px)` : '70vh',
+        transition: 'height 0.3s ease-out, max-height 0.3s ease-out'
+      }}
       className={styles.commentModal}
     >
       <div className={styles.modalHeader}>
@@ -140,7 +180,6 @@ const CommentModal = ({
               <div 
                 key={comment.id} 
                 className={styles.commentItem}
-                onTouchStart={() => handleCommentLongPress(comment)}
               >
                 <Avatar 
                   src={comment.avatar}
@@ -165,7 +204,13 @@ const CommentModal = ({
         </div>
 
         {/* 评论输入区域 */}
-        <div className={styles.commentInput}>
+        <div 
+          className={styles.commentInput}
+          style={{
+            transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
+            transition: 'transform 0.3s ease-out'
+          }}
+        >
           <div className={styles.inputContainer}>
             <Avatar 
               src={user?.avatar}

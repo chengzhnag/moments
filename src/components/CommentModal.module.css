@@ -32,6 +32,8 @@
   flex-direction: column;
   height: calc(70vh - 60px);
   background: white;
+  position: relative;
+  overflow: hidden;
 }
 
 .commentsList {
@@ -128,6 +130,13 @@
   background: white;
   border-top: 1px solid #f0f0f0;
   padding: 12px 20px;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  /* 支持 iOS Safari 的键盘适配 */
+  padding-bottom: calc(12px + env(keyboard-inset-height, 0px));
+  /* 支持安卓键盘适配 */
+  margin-bottom: env(keyboard-inset-height, 0px);
 }
 
 .inputContainer {
@@ -216,6 +225,25 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* 键盘适配的额外样式 */
+.commentModal .adm-popup-body {
+  transition: height 0.3s ease-out !important;
+}
+
+/* 确保在键盘弹出时输入框可见 */
+@supports (padding-bottom: env(keyboard-inset-height)) {
+  .commentInput {
+    padding-bottom: calc(12px + env(keyboard-inset-height));
+  }
+}
+
+/* 处理iPhone安全区域 */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .commentInput {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 }
 
