@@ -157,7 +157,7 @@ export const authApi = {
       }
     }
   },
-  
+
   async saveAuth(account, password, user) {
     api.setAuth(account, password);
     api.currentUser = {
@@ -291,6 +291,208 @@ export const recordsApi = {
    * @returns {Promise<Object>} 删除结果
    */
   deleteRecord: (id) => api.delete(`/records/${id}`),
+
+  /**
+   * 点赞/取消点赞记录
+   * @param {number} recordId - 记录ID
+   * @param {number} userId - 用户ID
+   * @param {string} userName - 用户名
+   * @returns {Promise<Object>} 点赞结果
+   */
+  async toggleLike(recordId, userId, userName) {
+    try {
+      // 首先获取当前记录
+      const record = await api.get(`/records/${recordId}`);
+
+      // 解析 extra_data
+      let extraData = {};
+      if (record.extra_data) {
+        try {
+          extraData = JSON.parse(record.extra_data);
+        } catch (error) {
+          console.error('解析 extra_data 失败:', error);
+          extraData = {};
+        }
+      }
+
+      // 初始化 likes 数组
+      if (!extraData.likes || !Array.isArray(extraData.likes)) {
+        extraData.likes = [];
+      }
+
+      // 检查用户是否已经点赞
+      const existingLikeIndex = extraData.likes.findIndex(like => like.userId === userId);
+
+      if (existingLikeIndex >= 0) {
+        // 取消点赞
+        extraData.likes.splice(existingLikeIndex, 1);
+      } else {
+        // 添加点赞
+        extraData.likes.push({
+          userId,
+          userName,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // 更新记录
+      const updatedRecord = await api.put(`/records/${recordId}`, {
+        extra_data: extraData
+      });
+
+      return {
+        success: true,
+        isLiked: existingLikeIndex < 0,
+        likesCount: extraData.likes.length,
+        record: updatedRecord
+      };
+    } catch (error) {
+      console.error('点赞操作失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 添加评论
+   * @param {number} recordId - 记录ID
+   * @param {number} userId - 用户ID
+   * @param {string} userName - 用户名
+   * @param {string} content - 评论内容
+   * @returns {Promise<Object>} 评论结果
+   */
+  async addComment(recordId, { userId, userName, content, avatar }) {
+    try {
+      // 首先获取当前记录
+      const record = await api.get(`/records/${recordId}`);
+
+      // 解析 extra_data
+      let extraData = {};
+      if (record.extra_data) {
+        try {
+          extraData = JSON.parse(record.extra_data);
+        } catch (error) {
+          console.error('解析 extra_data 失败:', error);
+          extraData = {};
+        }
+      }
+
+      // 初始化 comments 数组
+      if (!extraData.comments || !Array.isArray(extraData.comments)) {
+        extraData.comments = [];
+      }
+
+      // 添加新评论
+      const newComment = {
+        id: Date.now(), // 简单的ID生成
+        userId,
+        userName,
+        content,
+        avatar,
+        timestamp: new Date().toISOString()
+      };
+
+      extraData.comments.push(newComment);
+
+      // 更新记录
+      const updatedRecord = await api.put(`/records/${recordId}`, {
+        extra_data: extraData
+      });
+
+      return {
+        success: true,
+        comment: newComment,
+        commentsCount: extraData.comments.length,
+        record: updatedRecord
+      };
+    } catch (error) {
+      console.error('添加评论失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 获取记录的评论列表
+   * @param {number} recordId - 记录ID
+   * @returns {Promise<Array>} 评论列表
+   */
+  async getComments(recordId) {
+    try {
+      const record = await api.get(`/records/${recordId}`);
+
+      let extraData = {};
+      if (record.extra_data) {
+        try {
+          extraData = JSON.parse(record.extra_data);
+        } catch (error) {
+          console.error('解析 extra_data 失败:', error);
+          extraData = {};
+        }
+      }
+
+      return extraData.comments || [];
+    } catch (error) {
+      console.error('获取评论失败:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * 删除评论
+   * @param {number} recordId - 记录ID
+   * @param {number} commentId - 评论ID
+   * @param {number} userId - 用户ID (用于权限检查)
+   * @returns {Promise<Object>} 删除结果
+   */
+  async deleteComment(recordId, commentId, userId) {
+    try {
+      const record = await api.get(`/records/${recordId}`);
+
+      let extraData = {};
+      if (record.extra_data) {
+        try {
+          extraData = JSON.parse(record.extra_data);
+        } catch (error) {
+          console.error('解析 extra_data 失败:', error);
+          extraData = {};
+        }
+      }
+
+      if (!extraData.comments || !Array.isArray(extraData.comments)) {
+        throw new Error('评论不存在');
+      }
+
+      // 查找要删除的评论
+      const commentIndex = extraData.comments.findIndex(comment => comment.id === commentId);
+      if (commentIndex < 0) {
+        throw new Error('评论不存在');
+      }
+
+      const comment = extraData.comments[commentIndex];
+
+      // 检查权限：只有评论作者或管理员可以删除
+      const currentUser = api.currentUser;
+      if (comment.userId !== userId && currentUser?.role !== 'admin') {
+        throw new Error('没有权限删除此评论');
+      }
+
+      // 删除评论
+      extraData.comments.splice(commentIndex, 1);
+
+      // 更新记录
+      const updatedRecord = await api.put(`/records/${recordId}`, {
+        extra_data: extraData
+      });
+
+      return {
+        success: true,
+        commentsCount: extraData.comments.length,
+        record: updatedRecord
+      };
+    } catch (error) {
+      console.error('删除评论失败:', error);
+      throw error;
+    }
+  },
 };
 
 // 导出API实例和认证API

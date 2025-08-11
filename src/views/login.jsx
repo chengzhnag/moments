@@ -86,7 +86,7 @@ const Login = () => {
                 label={<span className={styles.formLabel}>账号</span>}
                 rules={[
                   { required: true, message: '请输入账号' },
-                  { min: 3, message: '账号至少3个字符' }
+                  { min: 2, message: '账号至少2个字符' }
                 ]}
               >
                 <Input

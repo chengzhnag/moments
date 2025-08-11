@@ -10,6 +10,7 @@ import {
 import { useMount } from "ahooks";
 import { useAuth } from "../utils/authContext";
 import { recordsApi } from "../utils/api";
+import CommentModal from "../components/CommentModal";
 import {
   HeartOutline,
   MessageOutline,
@@ -32,6 +33,8 @@ const Entry = () => {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({});
   const [deletingPostId, setDeletingPostId] = useState(null);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [showComments, setShowComments] = useState(false);
   const handler = useRef(null);
   const containerRef = useRef(null);
 
@@ -62,10 +65,10 @@ const Entry = () => {
       if (!createdAt) return '刚刚';
       const now = new Date();
       const created = new Date(createdAt);
-      
+
       // 增加8小时到创建时间
       created.setHours(created.getHours() + 8);
-      
+
       const diffMs = now - created;
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -79,6 +82,10 @@ const Entry = () => {
       }
     };
 
+    // 处理点赞数据
+    const likesArray = Array.isArray(extra_data?.likes) ? extra_data.likes : [];
+    const commentsArray = Array.isArray(extra_data?.comments) ? extra_data.comments : [];
+
     return {
       id: record.id,
       user: {
@@ -88,14 +95,32 @@ const Entry = () => {
       },
       content: record.content_text || '',
       images: images,
-      likes: extra_data?.likes || 0,
-      comments: extra_data?.comments || 0,
+      likes: likesArray.length,
+      likesData: likesArray,
+      comments: commentsArray.length,
+      commentsData: commentsArray,
       shares: extra_data?.shares || 0,
       time: getTimeAgo(record.created_at),
       location: extra_data?.location || '',
       isLargeImage: images.length === 1
     };
   };
+
+  // 初始化用户点赞状态
+  const initializeLikedPosts = useCallback((posts) => {
+    if (!user) return;
+
+    const likedPostIds = new Set();
+    posts.forEach(post => {
+      if (post.likesData && Array.isArray(post.likesData)) {
+        const hasLiked = post.likesData.some(like => like.userId === user.id);
+        if (hasLiked) {
+          likedPostIds.add(post.id);
+        }
+      }
+    });
+    setLikedPosts(likedPostIds);
+  }, [user]);
 
   // 获取记录数据
   const fetchRecords = useCallback(async (pageNum = 1, isRefresh = false) => {
@@ -110,8 +135,13 @@ const Entry = () => {
 
       if (isRefresh) {
         setPosts(transformedPosts);
+        initializeLikedPosts(transformedPosts);
       } else {
-        setPosts(prev => [...prev, ...transformedPosts]);
+        setPosts(prev => {
+          const newPosts = [...prev, ...transformedPosts];
+          initializeLikedPosts(newPosts);
+          return newPosts;
+        });
       }
 
       setPagination(response.pagination || {});
@@ -126,7 +156,7 @@ const Entry = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [initializeLikedPosts]);
 
   useMount(() => {
     fetchRecords(1, true).finally(() => {
@@ -173,30 +203,159 @@ const Entry = () => {
     }
   }, [handleScroll]);
 
-  const handleLike = (postId) => {
-    setLikedPosts(prev => {
-      const newLiked = new Set(prev);
-      if (newLiked.has(postId)) {
-        newLiked.delete(postId);
-      } else {
-        newLiked.add(postId);
-      }
-      return newLiked;
-    });
+  const handleLike = async (postId) => {
+    if (!user) {
+      Toast.show({
+        content: '请先登录',
+        position: 'center',
+      });
+      return;
+    }
 
-    setPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          likes: likedPosts.has(postId) ? post.likes - 1 : post.likes + 1
-        };
+    try {
+      const result = await recordsApi.toggleLike(postId, user.id, user.name);
+
+      // 更新本地状态
+      if (result.isLiked) {
+        setLikedPosts(prev => new Set([...prev, postId]));
+      } else {
+        setLikedPosts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
       }
-      return post;
-    }));
+
+      // 更新帖子数据
+      setPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            likes: result.likesCount,
+            likesData: result.record.extra_data ? JSON.parse(result.record.extra_data).likes || [] : []
+          };
+        }
+        return post;
+      }));
+
+    } catch (error) {
+      console.error('点赞操作失败:', error);
+      Toast.show({
+        content: '操作失败，请重试',
+        position: 'center',
+      });
+    }
   };
 
   const handleImageClick = (images, index) => {
     ImageViewer.Multi.show({ images: images, defaultIndex: index })
+  };
+
+  // 处理评论点击
+  const handleCommentClick = (post) => {
+    setSelectedPost(post);
+    setShowComments(true);
+  };
+
+  // 添加评论
+  const handleAddComment = async (postId, content) => {
+    if (!user) {
+      Toast.show({
+        content: '请先登录',
+        position: 'center',
+      });
+      return;
+    }
+
+    if (!content.trim()) {
+      Toast.show({
+        content: '请输入评论内容',
+        position: 'center',
+      });
+      return;
+    }
+
+    try {
+      const result = await recordsApi.addComment(postId, {
+        userId: user.id,
+        userName: user.name,
+        avatar: user.avatar,
+        content: content.trim()
+      });
+
+      // 更新帖子数据
+      setPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            comments: result.commentsCount,
+            commentsData: result.record.extra_data ? JSON.parse(result.record.extra_data).comments || [] : []
+          };
+        }
+        return post;
+      }));
+
+      // 更新选中的帖子数据
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost(prev => ({
+          ...prev,
+          comments: result.commentsCount,
+          commentsData: result.record.extra_data ? JSON.parse(result.record.extra_data).comments || [] : []
+        }));
+      }
+
+      Toast.show({
+        content: '评论成功',
+        position: 'center',
+      });
+
+    } catch (error) {
+      console.error('添加评论失败:', error);
+      Toast.show({
+        content: '评论失败，请重试',
+        position: 'center',
+      });
+    }
+  };
+
+  // 删除评论
+  const handleDeleteComment = async (postId, commentId) => {
+    try {
+      const result = await recordsApi.deleteComment(postId, commentId, user.id);
+
+      // 更新帖子数据
+      setPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            comments: result.commentsCount,
+            commentsData: result.record.extra_data ? JSON.parse(result.record.extra_data).comments || [] : []
+          };
+        }
+        return post;
+      }));
+
+      // 更新选中的帖子数据
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost(prev => ({
+          ...prev,
+          comments: result.commentsCount,
+          commentsData: result.record.extra_data ? JSON.parse(result.record.extra_data).comments || [] : []
+        }));
+      }
+
+      Toast.show({
+        content: '删除成功',
+        position: 'center',
+      });
+
+    } catch (error) {
+      console.error('删除评论失败:', error);
+      Toast.show({
+        content: error.message || '删除失败，请重试',
+        position: 'center',
+      });
+    }
   };
 
   const handleMore = (postId) => {
@@ -272,84 +431,81 @@ const Entry = () => {
   const renderPost = (post) => {
     const isDeleting = deletingPostId === post.id;
     return (
-    <div key={post.id} className={`${styles.postContainer} ${isDeleting ? styles.deleting : ''}`}>
-      <div className={styles.postHeader}>
-        <div className={styles.userInfo}>
-          <Avatar src={post.user.avatar} className={styles.userAvatar} />
-          <div className={styles.userDetails}>
-            <div className={styles.userName}>
-              {post.user.name}
-              {post.user.verified && <span className={styles.verifiedBadge}>✓</span>}
-            </div>
-            <div className={styles.postMeta}>
-              {/* <TimeOutline className="meta-icon" /> */}
-              <span>{post.time}</span>
-              {post.location && (
-                <>
-                  <LocationOutline className={styles.metaIcon} />
-                  <span>{post.location}</span>
-                </>
-              )}
+      <div key={post.id} className={`${styles.postContainer} ${isDeleting ? styles.deleting : ''}`}>
+        <div className={styles.postHeader}>
+          <div className={styles.userInfo}>
+            <Avatar src={post.user.avatar} className={styles.userAvatar} />
+            <div className={styles.userDetails}>
+              <div className={styles.userName}>
+                {post.user.name}
+                {post.user.verified && <span className={styles.verifiedBadge}>✓</span>}
+              </div>
+              <div className={styles.postMeta}>
+                {/* <TimeOutline className="meta-icon" /> */}
+                <span>{post.time}</span>
+                {post.location && (
+                  <>
+                    <LocationOutline className={styles.metaIcon} />
+                    <span>{post.location}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        <MoreOutline 
-          onClick={() => !isDeleting && handleMore(post.id)} 
-          className={`${styles.moreIcon} ${isDeleting ? styles.disabled : ''}`} 
-        />
-      </div>
-
-      {post.content && (
-        <div className={styles.postContent}>
-          {post.content}
-        </div>
-      )}
-
-      {post.images && post.images.length > 0 && (
-        <div 
-          className={`${styles.postImages} ${post.isLargeImage ? styles.largeImage : styles.gridImages}`}
-          data-count={post.isLargeImage ? undefined : post.images.length}
-        >
-          {post.images.map((image, index) => (
-            <div key={index} onClick={() => handleImageClick(post.images, index)} className={styles.imageWrapper}>
-              <Image
-                src={image}
-                width="100%"
-                height="100%"
-                fit="cover"
-                lazy
-                className={styles.postImage}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className={styles.postActions}>
-        <div className={styles.actionItem} onClick={() => handleLike(post.id)}>
-          <HeartOutline
-            className={`${styles.actionIcon} ${likedPosts.has(post.id) ? styles.liked : ''}`}
+          <MoreOutline
+            onClick={() => !isDeleting && handleMore(post.id)}
+            className={`${styles.moreIcon} ${isDeleting ? styles.disabled : ''}`}
           />
-          <span className={likedPosts.has(post.id) ? styles.liked : ''}>
-            {post.likes}
-          </span>
         </div>
-        <div className={styles.actionItem}>
-          <MessageOutline className={styles.actionIcon} />
-          <span>{post.comments}</span>
+
+        {post.content && (
+          <div className={styles.postContent}>
+            {post.content}
+          </div>
+        )}
+
+        {post.images && post.images.length > 0 && (
+          <div
+            className={`${styles.postImages} ${post.isLargeImage ? styles.largeImage : styles.gridImages}`}
+            data-count={post.isLargeImage ? undefined : post.images.length}
+          >
+            {post.images.map((image, index) => (
+              <div key={index} onClick={() => handleImageClick(post.images, index)} className={styles.imageWrapper}>
+                <Image
+                  src={image}
+                  width="100%"
+                  height="100%"
+                  fit="cover"
+                  lazy
+                  className={styles.postImage}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className={styles.postActions}>
+          <div className={styles.actionItem}>
+            <HeartOutline
+              className={`${styles.actionIcon} ${likedPosts.has(post.id) ? styles.liked : ''}`}
+              onClick={() => handleLike(post.id)}
+            />
+            <span className={`${likedPosts.has(post.id) ? styles.liked : ''} ${styles.likesCount}`} >
+              {post.likes}
+            </span>
+          </div>
+          <div className={styles.actionItem} onClick={() => handleCommentClick(post)}>
+            <MessageOutline className={styles.actionIcon} />
+            <span>{post.comments}</span>
+          </div>
         </div>
-        {/* <div className="action-item">
-          <ShareOutline className="action-icon" />
-          <span>{post.shares}</span>
-        </div> */}
+        {isDeleting && (
+          <div className={styles.deletingOverlay}>
+            <DotLoading color="white" />
+            <span className={styles.deletingText}>删除中...</span>
+          </div>
+        )}
       </div>
-      {isDeleting && (
-        <div className={styles.deletingOverlay}>
-          <DotLoading color="white" />
-          <span className={styles.deletingText}>删除中...</span>
-        </div>
-      )}
-    </div>
     );
   };
 
@@ -423,6 +579,15 @@ const Entry = () => {
         </PullToRefresh>
       </div>
       <SafeArea position='bottom' />
+
+      {/* 评论弹窗 */}
+      <CommentModal
+        visible={showComments}
+        onClose={() => setShowComments(false)}
+        post={selectedPost}
+        onAddComment={handleAddComment}
+        onDeleteComment={handleDeleteComment}
+      />
     </div>
   );
 };
