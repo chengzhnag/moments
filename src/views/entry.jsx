@@ -31,6 +31,7 @@ const Entry = () => {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({});
+  const [deletingPostId, setDeletingPostId] = useState(null);
   const handler = useRef(null);
   const containerRef = useRef(null);
 
@@ -199,15 +200,19 @@ const Entry = () => {
   };
 
   const handleMore = (postId) => {
+    const isDeleting = deletingPostId === postId;
     const actions = [
       {
-        text: '删除',
+        text: isDeleting ? '删除中...' : '删除',
         key: 'delete',
         description: '删除后数据不可恢复',
         danger: true,
         bold: true,
+        disabled: isDeleting,
         onClick: async () => {
+          if (isDeleting) return;
           try {
+            setDeletingPostId(postId);
             await recordsApi.deleteRecord(postId);
             setPosts(prev => prev.filter(post => post.id !== postId));
             Toast.show({
@@ -220,6 +225,8 @@ const Entry = () => {
               content: '删除失败，请重试',
               position: 'center',
             });
+          } finally {
+            setDeletingPostId(null);
           }
           handler.current?.close();
         },
@@ -262,8 +269,10 @@ const Entry = () => {
     </div>
   );
 
-  const renderPost = (post) => (
-    <div key={post.id} className={styles.postContainer}>
+  const renderPost = (post) => {
+    const isDeleting = deletingPostId === post.id;
+    return (
+    <div key={post.id} className={`${styles.postContainer} ${isDeleting ? styles.deleting : ''}`}>
       <div className={styles.postHeader}>
         <div className={styles.userInfo}>
           <Avatar src={post.user.avatar} className={styles.userAvatar} />
@@ -284,7 +293,10 @@ const Entry = () => {
             </div>
           </div>
         </div>
-        <MoreOutline onClick={() => handleMore(post.id)} className={styles.moreIcon} />
+        <MoreOutline 
+          onClick={() => !isDeleting && handleMore(post.id)} 
+          className={`${styles.moreIcon} ${isDeleting ? styles.disabled : ''}`} 
+        />
       </div>
 
       {post.content && (
@@ -331,8 +343,15 @@ const Entry = () => {
           <span>{post.shares}</span>
         </div> */}
       </div>
+      {isDeleting && (
+        <div className={styles.deletingOverlay}>
+          <DotLoading color="white" />
+          <span className={styles.deletingText}>删除中...</span>
+        </div>
+      )}
     </div>
-  );
+    );
+  };
 
   return (
     <div className={styles.entryContainer}>

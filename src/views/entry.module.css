@@ -58,6 +58,11 @@
   padding: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border: 1px solid #f0f0f0;
+  position: relative;
+}
+
+.postContainer.deleting {
+  opacity: 0.7;
 }
 
 .postHeader {
@@ -126,6 +131,11 @@
   font-size: 28px;
   padding: 4px;
   cursor: pointer;
+}
+
+.moreIcon.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .postContent {
@@ -393,4 +403,26 @@
   width: 60px;
   height: 20px;
   border-radius: 10px;
+}
+
+/* 删除中样式 */
+.deletingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.deletingText {
+  color: white;
+  font-size: 14px;
+  margin-top: 8px;
 } 
