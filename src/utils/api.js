@@ -126,9 +126,17 @@ export const authApi = {
       const users = await api.get('/auth');
       console.log('users：', users);
 
+      let extraData = {};
+      try {
+        extraData = JSON.parse(users?.extra_data);
+      } catch (e) {
+        extraData = {};
+      }
+
       // 认证成功，保存当前用户信息
       api.currentUser = {
         ...users,
+        ...extraData,
         authenticated: true,
         loginTime: new Date().toISOString()
       };
