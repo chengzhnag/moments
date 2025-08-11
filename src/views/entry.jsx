@@ -123,7 +123,7 @@ const Entry = () => {
   }, [user]);
 
   // 获取记录数据
-  const fetchRecords = useCallback(async (pageNum = 1, isRefresh = false) => {
+  const fetchRecords = async (pageNum = 1, isRefresh = false) => {
     try {
       setLoading(true);
       const response = await recordsApi.getRecords({
@@ -156,7 +156,7 @@ const Entry = () => {
     } finally {
       setLoading(false);
     }
-  }, [initializeLikedPosts]);
+  }
 
   useMount(() => {
     fetchRecords(1, true).finally(() => {
@@ -165,13 +165,12 @@ const Entry = () => {
   });
 
   // 刷新数据
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
     await fetchRecords(1, true);
     setPage(1);
-    setLikedPosts(new Set());
     setRefreshing(false);
-  }, [fetchRecords]);
+  };
 
   // 加载更多数据
   const loadMore = useCallback(async () => {
@@ -180,7 +179,7 @@ const Entry = () => {
     const nextPage = page + 1;
     await fetchRecords(nextPage, false);
     setPage(nextPage);
-  }, [loading, hasMore, page, fetchRecords]);
+  }, [loading, hasMore, page]);
 
   // 滚动监听
   const handleScroll = useCallback(() => {
@@ -192,7 +191,7 @@ const Entry = () => {
     if (scrollHeight - scrollTop - clientHeight < threshold && !loading && hasMore) {
       loadMore();
     }
-  }, [loading, hasMore, loadMore]);
+  }, [loading, hasMore]);
 
   // 添加滚动监听
   useEffect(() => {
