@@ -54,6 +54,7 @@ const Create = () => {
         content_text: values.content || '',
         content_media: images.length > 0 ? JSON.stringify(images.map(img => img.url)) : null,
         extra_data: {
+          avatar: user?.avatar || '',
           likes: 0,
           comments: 0,
           shares: 0
