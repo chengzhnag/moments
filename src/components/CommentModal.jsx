@@ -57,6 +57,23 @@ const CommentModal = ({
       return;
     }
 
+    if (!post?.id) {
+      Toast.show({
+        content: '帖子信息异常，请刷新重试',
+        position: 'center',
+      });
+      return;
+    }
+
+    if (!onAddComment || typeof onAddComment !== 'function') {
+      console.error('onAddComment prop is not a function');
+      Toast.show({
+        content: '系统异常，请重试',
+        position: 'center',
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onAddComment(post.id, commentText);
@@ -65,8 +82,17 @@ const CommentModal = ({
       if (textAreaRef.current) {
         textAreaRef.current.clear();
       }
+      
+      Toast.show({
+        content: '评论成功',
+        position: 'center',
+      });
     } catch (error) {
       console.error('提交评论失败:', error);
+      Toast.show({
+        content: error.message || '评论失败，请重试',
+        position: 'center',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -101,12 +127,20 @@ const CommentModal = ({
 
   // 键盘高度监听
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      setKeyboardHeight(0);
+      return;
+    }
 
     let timeoutId = null;
+    let isViewportSupported = false;
+
+    const updateKeyboardHeight = (heightDiff) => {
+      const newKeyboardHeight = heightDiff > 100 ? Math.min(heightDiff, 400) : 0;
+      setKeyboardHeight(newKeyboardHeight);
+    };
 
     const handleViewportChange = () => {
-      // 防抖处理，避免频繁触发
       if (timeoutId) clearTimeout(timeoutId);
       
       timeoutId = setTimeout(() => {
@@ -114,50 +148,74 @@ const CommentModal = ({
           const viewportHeight = window.visualViewport.height;
           const windowHeight = window.innerHeight;
           const heightDiff = windowHeight - viewportHeight;
-          
-          // 键盘高度阈值调整为100px，更敏感
-          const newKeyboardHeight = heightDiff > 100 ? heightDiff : 0;
-          setKeyboardHeight(newKeyboardHeight);
+          updateKeyboardHeight(heightDiff);
         }
-      }, 50); // 50ms防抖
-    };
-
-    // 监听视口变化
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-      // 初始化检查
-      handleViewportChange();
-      
-      return () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        window.visualViewport.removeEventListener('resize', handleViewportChange);
-      };
-    }
-
-    // 兼容性处理：监听窗口大小变化
-    const handleResize = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      
-      timeoutId = setTimeout(() => {
-        const currentHeight = window.innerHeight;
-        const screenHeight = window.screen.availHeight || window.screen.height;
-        const heightDiff = screenHeight - currentHeight;
-        
-        const newKeyboardHeight = heightDiff > 100 ? heightDiff : 0;
-        setKeyboardHeight(newKeyboardHeight);
       }, 50);
     };
 
-    window.addEventListener('resize', handleResize);
-    
+    // 优先使用 visualViewport API
+    if (window.visualViewport) {
+      isViewportSupported = true;
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      // 初始化检查
+      handleViewportChange();
+    } else {
+      // 兼容性回退：使用window resize
+      const handleResize = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        timeoutId = setTimeout(() => {
+          // 使用更可靠的高度计算
+          const currentHeight = window.innerHeight;
+          const documentHeight = document.documentElement.clientHeight;
+          const heightDiff = Math.max(documentHeight - currentHeight, 0);
+          updateKeyboardHeight(heightDiff);
+        }, 50);
+      };
+
+      window.addEventListener('resize', handleResize);
+    }
+
+    // 清理函数
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      window.removeEventListener('resize', handleResize);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      if (isViewportSupported) {
+        window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      } else {
+        window.removeEventListener('resize', handleResize);
+      }
+      
       setKeyboardHeight(0);
     };
   }, [visible]);
 
-  const comments = post?.commentsData || [];
+  // 当弹窗打开时聚焦输入框
+  useEffect(() => {
+    if (visible && textAreaRef.current) {
+      const timer = setTimeout(() => {
+        textAreaRef.current.focus();
+      }, 300); // 等待弹窗动画完成
+      
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  // 数据验证和安全处理
+  const comments = React.useMemo(() => {
+    if (!post?.commentsData || !Array.isArray(post.commentsData)) {
+      return [];
+    }
+    
+    return post.commentsData.filter(comment => 
+      comment && 
+      typeof comment === 'object' && 
+      comment.id && 
+      comment.content
+    );
+  }, [post?.commentsData]);
 
   return (
     <Popup

@@ -239,7 +239,40 @@
   }
 }
 
-/* 长按高亮效果 */
+/* 交互效果优化 */
 .commentItem:active {
   background-color: #f0f0f0;
+  transform: scale(0.98);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+/* 删除图标优化 */
+.deleteIcon {
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.deleteIcon:active {
+  transform: scale(0.9);
+}
+
+/* 确保在不同设备上的兼容性 */
+@media (max-height: 600px) {
+  .modalBody {
+    height: calc(80vh - 60px);
+  }
+}
+
+/* 处理极小屏幕 */
+@media (max-height: 480px) {
+  .modalBody {
+    height: calc(90vh - 60px);
+  }
+  
+  .commentsList {
+    padding: 0 12px;
+  }
+  
+  .commentInput {
+    padding: 8px 12px;
+  }
 }
