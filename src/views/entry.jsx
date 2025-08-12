@@ -523,21 +523,16 @@ const Entry = () => {
               发布
             </Button>
           )}
-          {user && (
+          {user && user.role === 'admin' && (
             <Button
               size="small"
               onClick={() => {
-                logout();
-                Toast.show({
-                  content: '已退出登录',
-                  position: 'center',
-                });
-                navigate('/login');
+                navigate('/create-account');
               }}
               className={styles.logoutBtn}
               fill="outline"
             >
-              退出
+              创建账号
             </Button>
           )}
         </div>

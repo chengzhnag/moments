@@ -123,8 +123,10 @@ const Login = () => {
             <div className={styles.bottomLinks}>
               <span className={styles.registerLink}>
                 还没有账户？{' '}
-                <a onClick={() => navigate('/create-account')}>
-                  创建账号
+                <a onClick={() => Toast.show({
+                  content: '暂未开放注册',
+                })}>
+                  立即注册
                 </a>
               </span>
             </div>

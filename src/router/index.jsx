@@ -63,9 +63,11 @@ const router = createBrowserRouter([
   {
     path: "/create-account",
     element: (
-      <Suspense fallback={<LoadingComponent />}>
-        <CreateAccount />
-      </Suspense>
+      <ProtectedRoute>
+        <Suspense fallback={<LoadingComponent />}>
+          <CreateAccount />
+        </Suspense>
+      </ProtectedRoute>
     ),
     meta: {
       title: '创建账号',
