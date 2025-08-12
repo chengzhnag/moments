@@ -108,15 +108,18 @@ const CommentModal = ({
         const viewportHeight = window.visualViewport.height;
         const windowHeight = window.innerHeight;
         const heightDiff = windowHeight - viewportHeight;
+        console.log('🥳heightDiff', heightDiff, windowHeight, viewportHeight);
         setKeyboardHeight(heightDiff > 150 ? heightDiff : 0);
       }
     };
 
     // 监听视口变化
     if (window.visualViewport) {
+      console.log('😀window.visualViewport', window.visualViewport);
       window.visualViewport.addEventListener('resize', handleViewportChange);
       return () => {
         window.visualViewport.removeEventListener('resize', handleViewportChange);
+        setKeyboardHeight(0);
       };
     }
 
