@@ -12,12 +12,12 @@ import { CloseOutline, DeleteOutline } from 'antd-mobile-icons';
 import { useAuth } from '../utils/authContext';
 import styles from './CommentModal.module.css';
 
-const CommentModal = ({ 
-  visible, 
-  onClose, 
-  post, 
-  onAddComment, 
-  onDeleteComment 
+const CommentModal = ({
+  visible,
+  onClose,
+  post,
+  onAddComment,
+  onDeleteComment
 }) => {
   const { user } = useAuth();
   const [commentText, setCommentText] = useState('');
@@ -82,7 +82,7 @@ const CommentModal = ({
       if (textAreaRef.current) {
         textAreaRef.current.clear();
       }
-      
+
       Toast.show({
         content: '评论成功',
         position: 'center',
@@ -125,82 +125,69 @@ const CommentModal = ({
     }
   };
 
-  // 键盘高度监听
+  // 键盘适配监听 - 优化版本
   useEffect(() => {
     if (!visible) {
       setKeyboardHeight(0);
       return;
     }
 
-    let timeoutId = null;
-    let isViewportSupported = false;
+    let timer = null;
+    let initialHeight = window.innerHeight;
 
-    const updateKeyboardHeight = (heightDiff) => {
-      const newKeyboardHeight = heightDiff > 100 ? Math.min(heightDiff, 400) : 0;
-      setKeyboardHeight(newKeyboardHeight);
-    };
+    const handleKeyboardChange = () => {
+      if (timer) clearTimeout(timer);
 
-    const handleViewportChange = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      
-      timeoutId = setTimeout(() => {
+      timer = setTimeout(() => {
         if (window.visualViewport) {
-          const viewportHeight = window.visualViewport.height;
-          const windowHeight = window.innerHeight;
-          const heightDiff = windowHeight - viewportHeight;
-          updateKeyboardHeight(heightDiff);
+          // 使用 visualViewport API - 最准确的方法
+          const keyboardHeight = window.innerHeight - window.visualViewport.height;
+          const finalHeight = keyboardHeight > 100 ? keyboardHeight : 0;
+          console.log('键盘高度检测:', {
+            windowHeight: window.innerHeight,
+            viewportHeight: window.visualViewport.height,
+            keyboardHeight,
+            finalHeight
+          });
+          setKeyboardHeight(finalHeight);
+        } else {
+          // 兼容性回退方案
+          const currentHeight = window.innerHeight;
+          const keyboardHeight = initialHeight - currentHeight;
+          const finalHeight = keyboardHeight > 100 ? keyboardHeight : 0;
+          console.log('键盘高度检测(兼容模式):', {
+            initialHeight,
+            currentHeight,
+            keyboardHeight,
+            finalHeight
+          });
+          setKeyboardHeight(finalHeight);
         }
-      }, 50);
+      }, 150);
     };
 
-    // 优先使用 visualViewport API
-    if (window.visualViewport) {
-      isViewportSupported = true;
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-      // 初始化检查
-      handleViewportChange();
-    } else {
-      // 兼容性回退：使用window resize
-      const handleResize = () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        
-        timeoutId = setTimeout(() => {
-          // 使用更可靠的高度计算
-          const currentHeight = window.innerHeight;
-          const documentHeight = document.documentElement.clientHeight;
-          const heightDiff = Math.max(documentHeight - currentHeight, 0);
-          updateKeyboardHeight(heightDiff);
-        }, 50);
-      };
+    // 记录初始高度
+    initialHeight = window.innerHeight;
 
-      window.addEventListener('resize', handleResize);
+    // 添加监听器
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleKeyboardChange);
+    } else {
+      window.addEventListener('resize', handleKeyboardChange);
     }
 
     // 清理函数
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      
-      if (isViewportSupported) {
-        window.visualViewport?.removeEventListener('resize', handleViewportChange);
+      if (timer) clearTimeout(timer);
+
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleKeyboardChange);
       } else {
-        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('resize', handleKeyboardChange);
       }
-      
+
       setKeyboardHeight(0);
     };
-  }, [visible]);
-
-  // 当弹窗打开时聚焦输入框
-  useEffect(() => {
-    if (visible && textAreaRef.current) {
-      const timer = setTimeout(() => {
-        textAreaRef.current.focus();
-      }, 300); // 等待弹窗动画完成
-      
-      return () => clearTimeout(timer);
-    }
   }, [visible]);
 
   // 数据验证和安全处理
@@ -208,11 +195,11 @@ const CommentModal = ({
     if (!post?.commentsData || !Array.isArray(post.commentsData)) {
       return [];
     }
-    
-    return post.commentsData.filter(comment => 
-      comment && 
-      typeof comment === 'object' && 
-      comment.id && 
+
+    return post.commentsData.filter(comment =>
+      comment &&
+      typeof comment === 'object' &&
+      comment.id &&
       comment.content
     );
   }, [post?.commentsData]);
@@ -222,10 +209,9 @@ const CommentModal = ({
       visible={visible}
       onMaskClick={onClose}
       position='bottom'
-      bodyStyle={{ 
+      bodyStyle={{
         height: '70vh',
-        maxHeight: keyboardHeight > 0 ? `calc(100vh - ${keyboardHeight}px - 20px)` : '70vh',
-        transition: 'max-height 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        minHeight: '300px',
       }}
       className={styles.commentModal}
     >
@@ -233,8 +219,8 @@ const CommentModal = ({
         <div className={styles.headerTitle}>
           评论 ({comments.length})
         </div>
-        <CloseOutline 
-          className={styles.closeIcon} 
+        <CloseOutline
+          className={styles.closeIcon}
           onClick={onClose}
         />
       </div>
@@ -249,11 +235,11 @@ const CommentModal = ({
             </div>
           ) : (
             comments.map((comment) => (
-              <div 
-                key={comment.id} 
+              <div
+                key={comment.id}
                 className={styles.commentItem}
               >
-                <Avatar 
+                <Avatar
                   src={comment.avatar}
                   className={styles.commentAvatar}
                 />
@@ -265,7 +251,7 @@ const CommentModal = ({
                   <div className={styles.commentText}>{comment.content}</div>
                 </div>
                 {user && (comment.userId === user.id || user.role === 'admin') && (
-                  <DeleteOutline 
+                  <DeleteOutline
                     className={styles.deleteIcon}
                     onClick={() => handleCommentLongPress(comment)}
                   />
@@ -276,15 +262,15 @@ const CommentModal = ({
         </div>
 
         {/* 评论输入区域 */}
-        <div 
+        <div
           className={styles.commentInput}
           style={{
-            transform: keyboardHeight > 0 ? `translateY(-${Math.min(keyboardHeight * 0.8, 300)}px)` : 'translateY(0)',
-            transition: 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+            transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
+            transition: 'transform 0.3s ease-out'
           }}
         >
           <div className={styles.inputContainer}>
-            <Avatar 
+            <Avatar
               src={user?.avatar}
               className={styles.inputAvatar}
             />
