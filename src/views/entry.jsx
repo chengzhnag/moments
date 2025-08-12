@@ -23,7 +23,7 @@ import styles from './entry.module.css';
 
 const Entry = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [posts, setPosts] = useState([]);
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [loading, setLoading] = useState(false);
@@ -521,6 +521,23 @@ const Entry = () => {
               className={styles.createBtn}
             >
               发布
+            </Button>
+          )}
+          {user && (
+            <Button
+              size="small"
+              onClick={() => {
+                logout();
+                Toast.show({
+                  content: '已退出登录',
+                  position: 'center',
+                });
+                navigate('/login');
+              }}
+              className={styles.logoutBtn}
+              fill="outline"
+            >
+              退出
             </Button>
           )}
         </div>

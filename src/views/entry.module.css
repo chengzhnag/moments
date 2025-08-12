@@ -24,6 +24,7 @@
 .headerActions {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .appTitle {
@@ -43,6 +44,19 @@
 
 .createBtn:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.logoutBtn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 14px;
+}
+
+.logoutBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .postsFeed {

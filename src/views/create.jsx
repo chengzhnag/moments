@@ -90,7 +90,7 @@ const Create = () => {
 
       {/* 导航栏 */}
       <NavBar
-        onBack={() => navigate('/')}
+        onBack={() => navigate(-1)}
         backArrow={<LeftOutline />}
         right={
           <Button

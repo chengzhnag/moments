@@ -6,13 +6,14 @@ import ProtectedRoute from "../components/ProtectedRoute";
 const Entry = lazy(() => import("../views/entry"));
 const Login = lazy(() => import("../views/login"));
 const Create = lazy(() => import("../views/create"));
+const CreateAccount = lazy(() => import("../views/createAccount"));
 
 // 加载组件
 const LoadingComponent = () => (
-  <div style={{ 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
     height: '100vh',
     fontSize: '16px',
     color: '#666'
@@ -57,6 +58,17 @@ const router = createBrowserRouter([
     ),
     meta: {
       title: '创建瞬间',
+    },
+  },
+  {
+    path: "/create-account",
+    element: (
+      <Suspense fallback={<LoadingComponent />}>
+        <CreateAccount />
+      </Suspense>
+    ),
+    meta: {
+      title: '创建账号',
     },
   },
 ]);
