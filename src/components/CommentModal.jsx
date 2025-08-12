@@ -103,32 +103,55 @@ const CommentModal = ({
   useEffect(() => {
     if (!visible) return;
 
+    let timeoutId = null;
+
     const handleViewportChange = () => {
-      if (window.visualViewport) {
-        const viewportHeight = window.visualViewport.height;
-        const windowHeight = window.innerHeight;
-        const heightDiff = windowHeight - viewportHeight;
-        setKeyboardHeight(heightDiff > 150 ? heightDiff : 0);
-      }
+      // 防抖处理，避免频繁触发
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      timeoutId = setTimeout(() => {
+        if (window.visualViewport) {
+          const viewportHeight = window.visualViewport.height;
+          const windowHeight = window.innerHeight;
+          const heightDiff = windowHeight - viewportHeight;
+          
+          // 键盘高度阈值调整为100px，更敏感
+          const newKeyboardHeight = heightDiff > 100 ? heightDiff : 0;
+          setKeyboardHeight(newKeyboardHeight);
+        }
+      }, 50); // 50ms防抖
     };
 
     // 监听视口变化
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleViewportChange);
+      // 初始化检查
+      handleViewportChange();
+      
       return () => {
+        if (timeoutId) clearTimeout(timeoutId);
         window.visualViewport.removeEventListener('resize', handleViewportChange);
       };
     }
 
     // 兼容性处理：监听窗口大小变化
     const handleResize = () => {
-      const currentHeight = window.innerHeight;
-      const heightDiff = window.screen.height - currentHeight;
-      setKeyboardHeight(heightDiff > 150 ? heightDiff : 0);
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      timeoutId = setTimeout(() => {
+        const currentHeight = window.innerHeight;
+        const screenHeight = window.screen.availHeight || window.screen.height;
+        const heightDiff = screenHeight - currentHeight;
+        
+        const newKeyboardHeight = heightDiff > 100 ? heightDiff : 0;
+        setKeyboardHeight(newKeyboardHeight);
+      }, 50);
     };
 
     window.addEventListener('resize', handleResize);
+    
     return () => {
+      if (timeoutId) clearTimeout(timeoutId);
       window.removeEventListener('resize', handleResize);
       setKeyboardHeight(0);
     };
@@ -142,9 +165,9 @@ const CommentModal = ({
       onMaskClick={onClose}
       position='bottom'
       bodyStyle={{ 
-        height: keyboardHeight > 0 ? `calc(70vh + ${keyboardHeight}px)` : '70vh',
-        maxHeight: keyboardHeight > 0 ? `calc(100vh - ${keyboardHeight}px)` : '70vh',
-        transition: 'height 0.3s ease-out, max-height 0.3s ease-out'
+        height: '70vh',
+        maxHeight: keyboardHeight > 0 ? `calc(100vh - ${keyboardHeight}px - 20px)` : '70vh',
+        transition: 'max-height 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
       }}
       className={styles.commentModal}
     >
@@ -198,8 +221,8 @@ const CommentModal = ({
         <div 
           className={styles.commentInput}
           style={{
-            transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
-            transition: 'transform 0.3s ease-out'
+            transform: keyboardHeight > 0 ? `translateY(-${Math.min(keyboardHeight * 0.8, 300)}px)` : 'translateY(0)',
+            transition: 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
           }}
         >
           <div className={styles.inputContainer}>

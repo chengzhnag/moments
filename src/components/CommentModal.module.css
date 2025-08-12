@@ -133,10 +133,8 @@
   position: sticky;
   bottom: 0;
   z-index: 10;
-  /* 支持 iOS Safari 的键盘适配 */
-  padding-bottom: calc(12px + env(keyboard-inset-height, 0px));
-  /* 支持安卓键盘适配 */
-  margin-bottom: env(keyboard-inset-height, 0px);
+  /* 移除环境变量适配，改用JavaScript控制 */
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .inputContainer {
@@ -230,17 +228,11 @@
 
 /* 键盘适配的额外样式 */
 .commentModal .adm-popup-body {
-  transition: height 0.3s ease-out !important;
+  /* JavaScript会控制弹窗高度变化 */
+  transition: max-height 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
 }
 
-/* 确保在键盘弹出时输入框可见 */
-@supports (padding-bottom: env(keyboard-inset-height)) {
-  .commentInput {
-    padding-bottom: calc(12px + env(keyboard-inset-height));
-  }
-}
-
-/* 处理iPhone安全区域 */
+/* 处理安全区域 - 仅保留必要的底部安全区域适配 */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .commentInput {
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
