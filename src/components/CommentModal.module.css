@@ -133,30 +133,10 @@
   position: sticky;
   bottom: 0;
   z-index: 10;
-  /* 平滑过渡动画 */
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 支持 iOS Safari 的键盘适配 */
+  padding-bottom: calc(12px + env(keyboard-inset-height, 0px));
   /* 支持安卓键盘适配 */
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  /* 确保在不同设备上的兼容性 */
-  will-change: transform;
-  backface-visibility: hidden;
-}
-
-/* 键盘激活状态 */
-.keyboardActive {
-  /* 添加阴影增强层次感 */
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* 动画进行中状态 */
-.animating {
-  /* 在动画进行时禁用用户交互，避免冲突 */
-  pointer-events: none;
-}
-
-.animating .inputContainer {
-  /* 恢复输入区域的交互 */
-  pointer-events: auto;
+  margin-bottom: env(keyboard-inset-height, 0px);
 }
 
 .inputContainer {
@@ -250,42 +230,20 @@
 
 /* 键盘适配的额外样式 */
 .commentModal .adm-popup-body {
-  transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  overflow: hidden;
+  transition: height 0.3s ease-out !important;
 }
 
-/* 优化的安全区域处理 */
+/* 确保在键盘弹出时输入框可见 */
+@supports (padding-bottom: env(keyboard-inset-height)) {
+  .commentInput {
+    padding-bottom: calc(12px + env(keyboard-inset-height));
+  }
+}
+
+/* 处理iPhone安全区域 */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .commentInput {
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  }
-  
-  /* iOS 设备特殊处理 */
-  @media (max-height: 812px) and (-webkit-device-pixel-ratio: 3) {
-    .commentInput {
-      padding-bottom: calc(12px + env(safe-area-inset-bottom) + 10px);
-    }
-  }
-}
-
-/* 键盘弹出时的额外优化 */
-@supports (height: env(keyboard-inset-height)) {
-  .keyboardActive {
-    /* 确保输入框不会被键盘遮挡 */
-    margin-bottom: env(keyboard-inset-height, 0px);
-  }
-}
-
-/* 针对不同屏幕尺寸的优化 */
-@media (max-height: 667px) {
-  .commentInput {
-    padding: 10px 20px;
-  }
-}
-
-@media (max-height: 568px) {
-  .commentInput {
-    padding: 8px 20px;
   }
 }
 

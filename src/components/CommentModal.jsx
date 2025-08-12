@@ -23,10 +23,8 @@ const CommentModal = ({
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [isKeyboardAnimating, setIsKeyboardAnimating] = useState(false);
   const textAreaRef = useRef(null);
   const handler = useRef(null);
-  const animationTimeoutRef = useRef(null);
 
   // 格式化时间
   const formatTime = (timestamp) => {
@@ -101,108 +99,39 @@ const CommentModal = ({
     }
   };
 
-  // 键盘高度监听 - 优化版本
+  // 键盘高度监听
   useEffect(() => {
     if (!visible) return;
 
-    let initialViewportHeight = window.innerHeight;
-    let initialVisualViewportHeight = window.visualViewport?.height || window.innerHeight;
-    
-    // 获取安全区域高度
-    const getSafeAreaBottom = () => {
-      const style = getComputedStyle(document.documentElement);
-      const safeAreaBottom = style.getPropertyValue('env(safe-area-inset-bottom)') || '0px';
-      return parseInt(safeAreaBottom) || 0;
-    };
-
     const handleViewportChange = () => {
       if (window.visualViewport) {
-        const currentViewportHeight = window.visualViewport.height;
-        const safeAreaBottom = getSafeAreaBottom();
-        
-        // 计算键盘高度，减去安全区域高度
-        const newKeyboardHeight = Math.max(0, initialVisualViewportHeight - currentViewportHeight - safeAreaBottom);
-        
-        // 只有当键盘高度超过一定阈值时才认为键盘弹起
-        const finalHeight = newKeyboardHeight > 100 ? newKeyboardHeight : 0;
-        
-        // 设置动画状态
-        if (finalHeight !== keyboardHeight) {
-          setIsKeyboardAnimating(true);
-          setKeyboardHeight(finalHeight);
-          
-          // 清除之前的定时器
-          if (animationTimeoutRef.current) {
-            clearTimeout(animationTimeoutRef.current);
-          }
-          
-          // 动画结束后重置状态
-          animationTimeoutRef.current = setTimeout(() => {
-            setIsKeyboardAnimating(false);
-          }, 250); // 与CSS动画时间保持一致
-        }
+        const viewportHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        const heightDiff = windowHeight - viewportHeight;
+        setKeyboardHeight(heightDiff > 150 ? heightDiff : 0);
       }
     };
-
-    // 兼容性处理：监听窗口大小变化
-    const handleResize = () => {
-      const currentHeight = window.innerHeight;
-      const safeAreaBottom = getSafeAreaBottom();
-      
-      // 计算键盘高度
-      const newKeyboardHeight = Math.max(0, initialViewportHeight - currentHeight - safeAreaBottom);
-      const finalHeight = newKeyboardHeight > 100 ? newKeyboardHeight : 0;
-      
-      // 设置动画状态
-      if (finalHeight !== keyboardHeight) {
-        setIsKeyboardAnimating(true);
-        setKeyboardHeight(finalHeight);
-        
-        // 清除之前的定时器
-        if (animationTimeoutRef.current) {
-          clearTimeout(animationTimeoutRef.current);
-        }
-        
-        // 动画结束后重置状态
-        animationTimeoutRef.current = setTimeout(() => {
-          setIsKeyboardAnimating(false);
-        }, 250);
-      }
-    };
-
-    // 记录初始高度
-    if (window.visualViewport) {
-      initialVisualViewportHeight = window.visualViewport.height;
-    }
-    initialViewportHeight = window.innerHeight;
 
     // 监听视口变化
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleViewportChange);
-      window.visualViewport.addEventListener('scroll', handleViewportChange);
-      
       return () => {
-        if (window.visualViewport) {
-          window.visualViewport.removeEventListener('resize', handleViewportChange);
-          window.visualViewport.removeEventListener('scroll', handleViewportChange);
-        }
-        if (animationTimeoutRef.current) {
-          clearTimeout(animationTimeoutRef.current);
-        }
-        setKeyboardHeight(0);
-        setIsKeyboardAnimating(false);
-      };
-    } else {
-      window.addEventListener('resize', handleResize);
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        if (animationTimeoutRef.current) {
-          clearTimeout(animationTimeoutRef.current);
-        }
-        setKeyboardHeight(0);
-        setIsKeyboardAnimating(false);
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
       };
     }
+
+    // 兼容性处理：监听窗口大小变化
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+      const heightDiff = window.screen.height - currentHeight;
+      setKeyboardHeight(heightDiff > 150 ? heightDiff : 0);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      setKeyboardHeight(0);
+    };
   }, [visible]);
 
   const comments = post?.commentsData || [];
@@ -213,8 +142,8 @@ const CommentModal = ({
       onMaskClick={onClose}
       position='bottom'
       bodyStyle={{ 
-        height: '70vh',
-        maxHeight: '70vh',
+        height: keyboardHeight > 0 ? `calc(70vh + ${keyboardHeight}px)` : '70vh',
+        maxHeight: keyboardHeight > 0 ? `calc(100vh - ${keyboardHeight}px)` : '70vh',
         transition: 'height 0.3s ease-out, max-height 0.3s ease-out'
       }}
       className={styles.commentModal}
@@ -267,10 +196,10 @@ const CommentModal = ({
 
         {/* 评论输入区域 */}
         <div 
-          className={`${styles.commentInput} ${keyboardHeight > 0 ? styles.keyboardActive : ''} ${isKeyboardAnimating ? styles.animating : ''}`}
+          className={styles.commentInput}
           style={{
-            '--keyboard-height': `${keyboardHeight}px`,
             transform: keyboardHeight > 0 ? `translateY(-${keyboardHeight}px)` : 'translateY(0)',
+            transition: 'transform 0.3s ease-out'
           }}
         >
           <div className={styles.inputContainer}>
