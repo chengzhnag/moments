@@ -133,9 +133,10 @@
   position: sticky;
   bottom: 0;
   z-index: 10;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-  /* 键盘适配时的动画效果 */
-  will-change: transform;
+  /* 支持 iOS Safari 的键盘适配 */
+  padding-bottom: calc(12px + env(keyboard-inset-height, 0px));
+  /* 支持安卓键盘适配 */
+  margin-bottom: env(keyboard-inset-height, 0px);
 }
 
 .inputContainer {
@@ -229,51 +230,24 @@
 
 /* 键盘适配的额外样式 */
 .commentModal .adm-popup-body {
-  /* 移除高度变化动画，只保留输入区域的位移动画 */
-  transition: none !important;
+  transition: height 0.3s ease-out !important;
 }
 
-/* 处理安全区域 - 仅保留必要的底部安全区域适配 */
+/* 确保在键盘弹出时输入框可见 */
+@supports (padding-bottom: env(keyboard-inset-height)) {
+  .commentInput {
+    padding-bottom: calc(12px + env(keyboard-inset-height));
+  }
+}
+
+/* 处理iPhone安全区域 */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .commentInput {
     padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
 }
 
-/* 交互效果优化 */
+/* 长按高亮效果 */
 .commentItem:active {
   background-color: #f0f0f0;
-  transform: scale(0.98);
-  transition: background-color 0.15s ease, transform 0.15s ease;
-}
-
-/* 删除图标优化 */
-.deleteIcon {
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.deleteIcon:active {
-  transform: scale(0.9);
-}
-
-/* 确保在不同设备上的兼容性 */
-@media (max-height: 600px) {
-  .modalBody {
-    height: calc(80vh - 60px);
-  }
-}
-
-/* 处理极小屏幕 */
-@media (max-height: 480px) {
-  .modalBody {
-    height: calc(90vh - 60px);
-  }
-  
-  .commentsList {
-    padding: 0 12px;
-  }
-  
-  .commentInput {
-    padding: 8px 12px;
-  }
 }
