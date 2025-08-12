@@ -147,7 +147,7 @@ const CreateAccount = () => {
               layout="horizontal"
               mode='card'
               initialValues={{
-                role: "normal"
+                role: ["normal"]
               }}
               footer={
                 <Button
