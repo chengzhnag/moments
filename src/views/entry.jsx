@@ -5,7 +5,7 @@ import {
   ImageViewer, DotLoading,
   SafeArea, PullToRefresh,
   Skeleton, ActionSheet,
-  Toast, ErrorBlock
+  Toast, ErrorBlock, Popover
 } from "antd-mobile";
 import { useMount } from "ahooks";
 import { useAuth } from "../utils/authContext";
@@ -514,26 +514,49 @@ const Entry = () => {
       <div className={styles.header}>
         <h1 className={styles.appTitle}>瞬间📝记录</h1>
         <div className={styles.headerActions}>
-          {user && user.role === 'admin' && (
-            <Button
-              size="small"
-              onClick={() => navigate("/create")}
-              className={styles.createBtn}
+          {user && (
+            <Popover
+              trigger="click"
+              content={
+                <div >
+                  {user?.role === 'admin' && (
+                    <div
+                      className={styles.menuItem}
+                      onClick={() => {
+                        navigate("/create");
+                      }}
+                    >
+                      发布
+                    </div>
+                  )}
+                  {user?.role === 'admin' && (
+                    <div
+                      className={styles.menuItem}
+                      onClick={() => {
+                        navigate('/create-account');
+                      }}
+                    >
+                      创建账号
+                    </div>
+                  )}
+                  <div
+                    className={`${styles.menuItem} ${styles.logoutItem}`}
+                    onClick={() => {
+                      logout();
+                      navigate('/login');
+                    }}
+                  >
+                    退出
+                  </div>
+                </div>
+              }
+              placement="bottom-end"
             >
-              发布
-            </Button>
-          )}
-          {user && user.role === 'admin' && (
-            <Button
-              size="small"
-              onClick={() => {
-                navigate('/create-account');
-              }}
-              className={styles.logoutBtn}
-              fill="outline"
-            >
-              创建账号
-            </Button>
+              <Avatar
+                src={user?.avatar}
+                className={styles.userAvatarHeader}
+              />
+            </Popover>
           )}
         </div>
       </div>
