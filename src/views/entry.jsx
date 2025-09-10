@@ -17,6 +17,7 @@ import {
   // ShareOutline,
   MoreOutline,
   LocationOutline,
+  PlayOutline,
   // TimeOutline
 } from 'antd-mobile-icons';
 import styles from './entry.module.css';
@@ -267,7 +268,7 @@ const Entry = () => {
             </div>
           );
         }
-        return <img src={src} alt="" style={{ width: '100%', height: '100%' }} />;
+        return <img src={src} alt="" style={{ width: '100%' }} />;
       },
     });
   };
@@ -500,6 +501,9 @@ const Entry = () => {
                   lazy
                   className={styles.postImage}
                 />
+                {(typeof item === 'object' && item.type === 'video') && (
+                  <PlayOutline className={styles.videoPlayIcon} />
+                )}
               </div>
             ))}
           </div>

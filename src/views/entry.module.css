@@ -225,6 +225,16 @@
   position: relative;
 }
 
+.videoPlayIcon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 32px;
+  pointer-events: none;
+}
+
 .postActions {
   display: flex;
   justify-content: space-around;
