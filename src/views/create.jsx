@@ -52,7 +52,7 @@ const Create = () => {
       const recordData = {
         creator_id: user?.id || 1, // 使用当前用户ID
         content_text: values.content || '',
-        content_media: images.length > 0 ? JSON.stringify(images.map(img => img.url)) : null,
+        content_media: images.length > 0 ? JSON.stringify(images) : null,
         extra_data: {
           avatar: user?.avatar || '',
           likes: [],
@@ -83,6 +83,14 @@ const Create = () => {
       setLoading(false);
     }
   };
+
+  function beforeUpload(file) {
+    if (file.size > 20 * 1024 * 1024) {
+      Toast.show('请选择小于 20M 的文件');
+      return null
+    }
+    return file
+  }
 
   return (
     <div className={styles.createContainer}>
@@ -145,6 +153,8 @@ const Create = () => {
               upload={handleImageUpload}
               maxCount={9}
               className={styles.imageUploader}
+              accept="image/*,video/*"
+              beforeUpload={beforeUpload}
             />
           </Form.Item>
         </Form>

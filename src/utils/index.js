@@ -5,7 +5,7 @@ export function commonUploadFile(file) {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('https://img.241125.xyz/upload-file', {
+    const response = await fetch('https://open.952737.xyz/api/upload-file', {
       method: 'POST',
       body: formData
     });
@@ -13,7 +13,12 @@ export function commonUploadFile(file) {
     if (response.ok) {
       const result = await response.json();
       console.log('上传成功:', result.data);
-      resolve({ url: result.data });
+      resolve({
+        url: result.data.url,
+        thumbnailUrl: result.data.thumbnailUrl,
+        key: result.data.key,
+        type: result.data.mimeType ? result.data.mimeType.startsWith('video/') ? 'video' : 'image' : 'image',
+      });
     } else {
       const error = await response.json();
       console.log('上传失败:', error.error);

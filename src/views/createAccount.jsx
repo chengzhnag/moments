@@ -56,6 +56,7 @@ const CreateAccount = () => {
         role: values.role?.[0] || 'normal',
         extra_data: {
           avatar: values.avatar?.[0]?.url,
+          avatarThumbnailUrl: values.avatar?.[0]?.thumbnailUrl,
           createdBy: user.name,
           createdAt: new Date().toISOString()
         }

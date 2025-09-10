@@ -247,7 +247,29 @@ const Entry = () => {
   };
 
   const handleImageClick = (images, index) => {
-    ImageViewer.Multi.show({ images: images, defaultIndex: index })
+    const formattedImages = images.map(img => {
+      if (typeof img === 'string') {
+        return img;
+      } else if (img.url) {
+        return img.url;
+      }
+      return '';
+    }).filter(url => url);
+    ImageViewer.Multi.show({
+      images: formattedImages,
+      defaultIndex: index,
+      imageRender: (src, { index }) => {
+        const isVideo = images[index] && (typeof images[index] === 'object' && images[index].type === 'video');
+        if (isVideo) {
+          return (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}>
+              <video muted autoPlay width='100%' controls src={src} />
+            </div>
+          );
+        }
+        return <img src={src} alt="" style={{ width: '100%', height: '100%' }} />;
+      },
+    });
   };
 
   // 处理评论点击
@@ -468,10 +490,10 @@ const Entry = () => {
             className={`${styles.postImages} ${post.isLargeImage ? styles.largeImage : styles.gridImages}`}
             data-count={post.isLargeImage ? undefined : post.images.length}
           >
-            {post.images.map((image, index) => (
+            {post.images.map((item, index) => (
               <div key={index} onClick={() => handleImageClick(post.images, index)} className={styles.imageWrapper}>
                 <Image
-                  src={image}
+                  src={item.thumbnailUrl || item.url || item}
                   width="100%"
                   height="100%"
                   fit="cover"
