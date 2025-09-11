@@ -10,6 +10,7 @@ import {
 import { useMount } from "ahooks";
 import { useAuth } from "../utils/authContext";
 import { recordsApi } from "../utils/api";
+import { debounce } from "../utils";
 import CommentModal from "../components/CommentModal";
 import {
   HeartOutline,
@@ -202,7 +203,7 @@ const Entry = () => {
     }
   }, [handleScroll]);
 
-  const handleLike = async (postId) => {
+  const handleLike = debounce(async (postId) => {
     if (!user) {
       Toast.show({
         content: '请先登录',
@@ -238,7 +239,7 @@ const Entry = () => {
         position: 'center',
       });
     }
-  };
+  }, 500);
 
   // 本地切换点赞状态
   const toggleLikeLocal = (postId) => {
