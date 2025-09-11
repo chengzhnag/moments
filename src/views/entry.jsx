@@ -212,18 +212,20 @@ const Entry = () => {
     }
 
     try {
-      const result = await recordsApi.toggleLike(postId, user.id, user.name);
-
-      // 更新本地状态
-      if (result.isLiked) {
-        setLikedPosts(prev => new Set([...prev, postId]));
-      } else {
+      // 优化用户体验，先更新前端状态
+      if (likedPosts.has(postId)) {
+        // 已点赞，执行取消点赞
         setLikedPosts(prev => {
           const newSet = new Set(prev);
           newSet.delete(postId);
           return newSet;
         });
+      } else {
+        // 未点赞，执行点赞
+        setLikedPosts(prev => new Set([...prev, postId]));
       }
+      // 调用API切换点赞状态
+      const result = await recordsApi.toggleLike(postId, user.id, user.name);
 
       // 更新帖子数据
       setPosts(prev => prev.map(post => {
@@ -239,6 +241,16 @@ const Entry = () => {
 
     } catch (error) {
       console.error('点赞操作失败:', error);
+      // 回滚前端状态
+      setLikedPosts(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(postId)) {
+          newSet.delete(postId);
+        } else {
+          newSet.add(postId);
+        }
+        return newSet;
+      });
       Toast.show({
         content: '操作失败，请重试',
         position: 'center',
