@@ -10,7 +10,6 @@ import {
 import { useMount } from "ahooks";
 import { useAuth } from "../utils/authContext";
 import { recordsApi } from "../utils/api";
-import { debounce } from "../utils";
 import CommentModal from "../components/CommentModal";
 import {
   HeartOutline,
@@ -28,6 +27,9 @@ const Entry = () => {
   const { user, logout } = useAuth();
   const [posts, setPosts] = useState([]);
   const [likedPosts, setLikedPosts] = useState(new Set());
+  const [likeAnimating, setLikeAnimating] = useState({});
+  // 重复点击点赞防抖
+  const [likeClicking, setLikeClicking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -203,7 +205,7 @@ const Entry = () => {
     }
   }, [handleScroll]);
 
-  const handleLike = debounce(async (postId) => {
+  const handleLike = async (postId) => {
     if (!user) {
       Toast.show({
         content: '请先登录',
@@ -211,7 +213,15 @@ const Entry = () => {
       });
       return;
     }
-
+    if (likeClicking) {
+      return;
+    }
+    setLikeClicking(true);
+    // 觸發動畫
+    setLikeAnimating(prev => ({ ...prev, [postId]: true }));
+    setTimeout(() => {
+      setLikeAnimating(prev => ({ ...prev, [postId]: false }));
+    }, 500);
     try {
       // 优化用户体验，先更新前端状态
       toggleLikeLocal(postId);
@@ -238,8 +248,10 @@ const Entry = () => {
         content: '操作失败，请重试',
         position: 'center',
       });
+    } finally {
+      setLikeClicking(false);
     }
-  }, 500);
+  };
 
   // 本地切换点赞状态
   const toggleLikeLocal = (postId) => {
@@ -529,7 +541,10 @@ const Entry = () => {
         <div className={styles.postActions}>
           <div className={styles.actionItem}>
             <HeartOutline
-              className={`${styles.actionIcon} ${likedPosts.has(post.id) ? styles.liked : ''}`}
+              className={
+                `${styles.actionIcon} ${likedPosts.has(post.id) ? styles.liked : ''} ` +
+                (likeAnimating[post.id] ? styles.likeAnimate : '')
+              }
               onClick={() => handleLike(post.id)}
             />
             <span className={`${likedPosts.has(post.id) ? styles.liked : ''} ${styles.likesCount}`} >
