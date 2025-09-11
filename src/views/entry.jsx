@@ -144,10 +144,9 @@ const Entry = () => {
           return newPosts;
         });
       }
-
-      setPagination(response.pagination || {});
-      setHasMore(response.pagination?.has_next || false);
-
+      const curPagination = response.pagination || {};
+      setPagination(curPagination);
+      setHasMore(curPagination.page < curPagination.pages);
     } catch (error) {
       console.error('获取记录失败:', error);
       Toast.show({
