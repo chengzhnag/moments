@@ -213,17 +213,7 @@ const Entry = () => {
 
     try {
       // 优化用户体验，先更新前端状态
-      if (likedPosts.has(postId)) {
-        // 已点赞，执行取消点赞
-        setLikedPosts(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(postId);
-          return newSet;
-        });
-      } else {
-        // 未点赞，执行点赞
-        setLikedPosts(prev => new Set([...prev, postId]));
-      }
+      toggleLikeLocal(postId);
       // 调用API切换点赞状态
       const result = await recordsApi.toggleLike(postId, user.id, user.name);
 
@@ -242,20 +232,35 @@ const Entry = () => {
     } catch (error) {
       console.error('点赞操作失败:', error);
       // 回滚前端状态
-      setLikedPosts(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(postId)) {
-          newSet.delete(postId);
-        } else {
-          newSet.add(postId);
-        }
-        return newSet;
-      });
+      toggleLikeLocal(postId);
       Toast.show({
         content: '操作失败，请重试',
         position: 'center',
       });
     }
+  };
+
+  // 本地切换点赞状态
+  const toggleLikeLocal = (postId) => {
+    setLikedPosts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+      }
+      return newSet;
+    });
+    setPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        const isLiked = likedPosts.has(postId);
+        return {
+          ...post,
+          likes: isLiked ? post.likes - 1 : post.likes + 1
+        };
+      }
+      return post;
+    }));
   };
 
   const handleImageClick = (images, index) => {
