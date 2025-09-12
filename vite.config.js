@@ -33,10 +33,19 @@ export default defineConfig({
           react: 'React', // 全局变量名
           'react-dom': 'ReactDOM', // 全局变量名
         },
-        entryFileNames: 'assets/[name].js',
-        chunkFileNames: 'assets/[name].js',
+        entryFileNames: 'assets/[name]-[hash:8].js',
+        chunkFileNames: 'assets/[name]-[hash:8].js',
         assetFileNames: 'assets/[name].[ext]',
       },
+    },
+    // 可选：启用压缩和 sourcemap
+    sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
     },
   },
 })
